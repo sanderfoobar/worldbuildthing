@@ -125,14 +125,14 @@ QSharedPointer<TextureImage> AssetPackWorker::processPath(const QFileInfo &path)
   if(texinfo.type == TextureImageType::diffuse) {
     if(m_meta_sql.contains(tex->name)) {
       const QSharedPointer<TextureCacheDbItem> item = m_meta_sql[tex->name];
-      tex->isAlpha = item->alpha;
+      tex->is_alpha = item->alpha;
       tex->checksum = item->checksum;
       tex->dimensions = {static_cast<int>(item->width), static_cast<int>(item->height)};
       tex->channels = item->channels;
     } else {
       tex->metadata_generate();
       const auto item = QSharedPointer<TextureCacheDbItem>(
-        new TextureCacheDbItem(tex->checksum, tex->name, tex->isAlpha, tex->dimensions.width(), tex->dimensions.height(), tex->channels));
+        new TextureCacheDbItem(tex->checksum, tex->name, tex->is_alpha, tex->dimensions.width(), tex->dimensions.height(), tex->channels));
       m_meta_sql[tex->name] = item;  // @TODO: this is probably on the stack, for this thread
       m_meta_sql_mutations << item;
     }

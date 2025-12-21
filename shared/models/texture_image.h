@@ -42,11 +42,10 @@ public:
   QString name_technical;
   TexImgExt ext;
   QString variant;
+  bool is_alpha = false;
 
   TextureSize size = TextureSize::null;
   TextureImageType type = TextureImageType::unknown;
-
-  bool isAlpha = false;
 
   QSize dimensions;
   QFileInfo path;
@@ -68,7 +67,7 @@ public:
   void inspect_checksum();
 
   // const getters/setters
-  QString path_TextureImage(TextureImageType ttype) const;
+  QFileInfo path_get(TextureImageType ttype) const;
   QString size_str() const;
   QString type_str() const;
   QFileInfo path_vmt() const;

@@ -10,20 +10,11 @@ TextureImage::TextureImage(const TexImgInfo &tex_info, const TexImgExt ext, QObj
   // name_technical
   if(!tex_info.variant.isEmpty()) {
     name_technical = QString("%1_%2").arg(
-      textureImageType2Str[type],
+      TEXIMGTYPE2STR[type],
       this->variant);
   } else {
-    name_technical = textureImageType2Str[type];
+    name_technical = TEXIMGTYPE2STR[type];
   }
-}
-
-void TextureImage::setTextureImageType(const TextureImageType _type) {
-  this->type = _type;
-}
-
-void TextureImage::setPath(const QFileInfo &path){
-  this->path = path;
-  this->basedir = path.absoluteDir().path() + "/";
 }
 
 TextureImage* TextureImage::fromPath(const QFileInfo &path) {
@@ -55,7 +46,7 @@ void TextureImage::inspect_channels_and_dimensions() {
     qWarning() << "png/jpg inspection failed for" << path.absoluteFilePath();
   }
 
-  isAlpha = channels == 4;
+  is_alpha = channels == 4;
 }
 
 void TextureImage::inspect_checksum() {
@@ -96,7 +87,7 @@ void TextureImage::ensure_thumbnail(bool force, QString &err) {
   img = img.scaled(height_new, width_new, Qt::KeepAspectRatio);
 
   bool res;
-  if(isAlpha)
+  if(is_alpha)
     res = img.save(path_thumb_out, "png", 80);
   else
     res = img.save(path_thumb_out, "jpg", 80);
@@ -129,7 +120,7 @@ QFileInfo TextureImage::path_thumbnail() {
     }
   }
 
-  const QString ext = isAlpha ? "png" : "jpg";
+  const QString ext = is_alpha ? "png" : "jpg";
   auto x = QFileInfo(gs::cacheDirectory + QDir::separator() + checksum + "." + ext);
   // qDebug() << x.absoluteFilePath();
   return x;

@@ -92,7 +92,7 @@ inline QSharedPointer<TextureImage> Texture::get_image(TextureImageType type ,Te
     if(scattering.contains(size))
       return scattering[size];
   } else {
-    qWarning() << "unknown weird type" << type;
+    qWarning() << "unknown weird type" << static_cast<int>(type);
   }
 
   return nullptr;
@@ -123,7 +123,7 @@ inline void Texture::setTexture(const QSharedPointer<TextureImage> &tex) {
   } else if(tex->type == TextureImageType::scattering) {
     this->setScattering(tex->size, tex);
   } else {
-    qWarning() << "uhm weird type" << tex->type;
+    qWarning() << "uhm weird type" << static_cast<int>(tex->type);
   }
 }
 
@@ -208,7 +208,7 @@ inline QJsonObject Texture::to_json() {
     QJsonObject out;
     for(auto it = src.begin(); it != src.end(); ++it)
       if(it.value())
-        out[textureSize2Str[it.key()]] = it.value()->to_json();
+        out[TEXSIZE2STR[it.key()]] = it.value()->to_json();
     return out;
   };
 
@@ -232,7 +232,7 @@ inline QJsonObject Texture::to_json() {
       for(auto vit = it.value().begin(); vit != it.value().end(); ++vit)
         if(vit.value())
           vv[vit.key()] = vit.value()->to_json();
-      v[textureSize2Str[it.key()]] = vv;
+      v[TEXSIZE2STR[it.key()]] = vv;
     }
     images["variants"] = v;
   }
@@ -252,7 +252,7 @@ inline QString Texture::to_tres(TextureSize tsize) {
   const QString asset_pack = tex->asset_pack()->name();
   QString texname = tex->name;
 
-  bool isAlpha = diffuse->isAlpha;
+  bool isAlpha = diffuse->is_alpha;
   auto arm = tex->get_image(TextureImageType::arm, tsize);
   auto spec = tex->get_image(TextureImageType::specular, tsize);
   auto metal = tex->get_image(TextureImageType::metalness, tsize);
