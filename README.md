@@ -1,6 +1,6 @@
 ## World Build Thing
 
-Asset management for the Splinter game engine.
+3d editor
 
 ### Server
 
