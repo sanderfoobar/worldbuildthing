@@ -35,9 +35,9 @@ find_package(OpenGL REQUIRED)
 #pkg_check_modules(LIBTORRENT REQUIRED libtorrent)
 #pkg_check_modules(LIBTORRENT_RASTERBAR REQUIRED libtorrent-rasterbar)
 
-add_subdirectory(shared)
-add_subdirectory(client)
+add_subdirectory(src/shared)
+#add_subdirectory(client)
 
 if(BUILD_SERVER)
-  add_subdirectory(server)
+  add_subdirectory(src/server)
 endif()
