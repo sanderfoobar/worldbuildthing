@@ -67,7 +67,7 @@ void SQL::create_schema() {
 QMap<QString, QSharedPointer<TextureCacheDbItem>> SQL::getTextureCache(const QString &asset_pack_name, const QString &asset_pack_dir) {
   const QSqlDatabase& db = SQL::getInstance();
   QSqlQuery query(db);
-  query.prepare("SELECT fn, checksum, alpha, width, height, channels FROM cache_texture WHERE asset_pack = :asset_pack AND dir = :dir;");
+  query.prepare("SELECT fn, alpha, width, height, channels FROM cache_texture WHERE asset_pack = :asset_pack AND dir = :dir;");
   query.bindValue(":asset_pack", asset_pack_name);
   query.bindValue(":dir", asset_pack_dir);
 
@@ -77,14 +77,13 @@ QMap<QString, QSharedPointer<TextureCacheDbItem>> SQL::getTextureCache(const QSt
   int i = 0;
   while (q.next()) {
     QString fn = q.value(0).toString();
-    QString checksum = q.value(1).toString();
-    bool isAlpha = q.value(2).toBool();
-    const unsigned int width = q.value(3).toInt();
-    const unsigned int height = q.value(4).toInt();
-    const unsigned int channels = q.value(5).toInt();
+    bool isAlpha = q.value(1).toBool();
+    const unsigned int width = q.value(2).toInt();
+    const unsigned int height = q.value(3).toInt();
+    const unsigned int channels = q.value(4).toInt();
 
     const QSharedPointer<TextureCacheDbItem> item =
-      QSharedPointer<TextureCacheDbItem>(new TextureCacheDbItem(checksum, fn, isAlpha, width, height, channels));
+      QSharedPointer<TextureCacheDbItem>(new TextureCacheDbItem(fn, isAlpha, width, height, channels));
 
     rtn[fn] = item;
     i++;
@@ -109,12 +108,11 @@ void SQL::setTextureCache(const QString& asset_pack_name, const QString& asset_p
   QSqlDatabase& db = SQL::getInstance();
   QSqlQuery query(db);
 
-  query.prepare("INSERT INTO cache_texture (asset_pack, dir, fn, checksum, alpha, width, height, channels) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(fn, dir) DO UPDATE SET checksum = excluded.checksum, alpha = excluded.alpha, width = excluded.width, height = excluded.height, channels = excluded.channels;");
+  query.prepare("INSERT INTO cache_texture (asset_pack, dir, fn, alpha, width, height, channels) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(fn, dir) DO UPDATE SET alpha = excluded.alpha, width = excluded.width, height = excluded.height, channels = excluded.channels;");
 
   QVariantList packs;
   QVariantList dirs;
   QVariantList fns;
-  QVariantList checksum;
   QVariantList alpha;
   QVariantList width;
   QVariantList height;
@@ -124,7 +122,6 @@ void SQL::setTextureCache(const QString& asset_pack_name, const QString& asset_p
     packs << asset_pack_name;
     dirs << asset_pack_dir;
     fns << item->fn;
-    checksum << item->checksum;
     alpha << item->alpha;
     width << item->width;
     height << item->height;
@@ -134,7 +131,6 @@ void SQL::setTextureCache(const QString& asset_pack_name, const QString& asset_p
   query.addBindValue(packs);
   query.addBindValue(dirs);
   query.addBindValue(fns);
-  query.addBindValue(checksum);
   query.addBindValue(alpha);
   query.addBindValue(width);
   query.addBindValue(height);

@@ -1,7 +1,9 @@
 #include "shared/models/texture_image.h"
+#include "shared/models/texture_image_getters_setters.h"
 
 TextureImage::TextureImage(const TexImgInfo &tex_info, const TexImgExt ext, QObject *parent) : ext(ext), QObject(parent) {
   this->name = tex_info.name;
+  this->name_lower = tex_info.name.toLower();
   this->name_original = tex_info.name_original;
   this->size = tex_info.size;
   this->type = tex_info.type;
@@ -22,7 +24,7 @@ TextureImage* TextureImage::from_path(const QFileInfo &path) {
   const auto tex_info = TexImgInfo(name);
   const TexImgExt ext = path.suffix() == "png" ? TexImgExt::PNG : TexImgExt::JPG;
   auto *cls = new TextureImage(tex_info, ext);
-  cls->setPath(path);
+  cls->set_path(path);
   return cls;
 }
 
@@ -50,17 +52,18 @@ void TextureImage::inspect_channels_and_dimensions() {
 }
 
 void TextureImage::inspect_checksum() {
-  QFile file(path.absoluteFilePath());
-  if (!file.open(QIODevice::ReadOnly)) {
-    qWarning() << "could not open" << path.absoluteFilePath() << "for checksum generation";
-    return;
-  }
-  auto part = file.read(120000);
-  checksum = QString(QCryptographicHash::hash(part, QCryptographicHash::Md5).toHex());
-  file.close();
+  // QFile file(path.absoluteFilePath());
+  // if (!file.open(QIODevice::ReadOnly)) {
+  //   qWarning() << "could not open" << path.absoluteFilePath() << "for checksum generation";
+  //   return;
+  // }
+  // auto part = file.read(120000);
+  // checksum = QString(QCryptographicHash::hash(part, QCryptographicHash::Md5).toHex());
+  // file.close();
+  checksum = QString("%1%2").arg(name_original, QString::number(path.size()));
 }
 
-void TextureImage::ensure_thumbnail(bool force, QString &err) {
+void TextureImage::ensure_thumbnail(const bool force, QString &err) {
   if (path.absoluteFilePath().isEmpty()) {
     err = "cannot create thumbnail without source path";
     qWarning() << err;

@@ -1,4 +1,6 @@
 #pragma once
+#include <utility>
+
 #include <QObject>
 #include <QString>
 #include <QSqlDatabase>
@@ -9,15 +11,19 @@
 #include "shared/lib/utils.h"
 
 struct TextureCacheDbItem {
-  QString checksum;
   QString fn;
   bool alpha;
   unsigned int width;
   unsigned int height;
   unsigned int channels;
 
-  TextureCacheDbItem(const QString& checksum_, const QString& fn_, bool alpha_, unsigned int width_, unsigned int height_, unsigned int channels_) : 
-    checksum(checksum_), fn(fn_), alpha(alpha_), width(width_), height(height_), channels(channels_) {}
+  TextureCacheDbItem(
+      QString  fn_,
+      const bool alpha_,
+      const unsigned int width_,
+      const unsigned int height_,
+      const unsigned int channels_) :
+    fn(std::move(fn_)), alpha(alpha_), width(width_), height(height_), channels(channels_) {}
 };
 
 class SQL {
@@ -34,11 +40,12 @@ public:
   static QMap<QString, QSharedPointer<TextureCacheDbItem>> getTextureCache(const QString &asset_pack_name, const QString &asset_pack_dir);
   static void setTextureCache(const QString &asset_pack_name, const QString &asset_pack_dir, const QList<QSharedPointer<TextureCacheDbItem>> &items);
 
+  SQL(const SQL&) = delete;
+  SQL& operator=(const SQL&) = delete;
+
 private:
   SQL() = default;
   ~SQL() = default;
-  SQL(const SQL&) = delete;
-  SQL& operator=(const SQL&) = delete;
 
   static QSqlDatabase db;
 };

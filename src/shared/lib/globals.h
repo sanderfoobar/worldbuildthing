@@ -4,8 +4,11 @@
 #include <QDebug>
 #include <QFileInfo>
 
+#include "shared/models/tags.h"
+
 class MaterialPropertiesTemplate;
-class TextureTag;
+class Texture;
+struct TextureTag;
 
 namespace gs {
   extern QString configRoot;
@@ -18,7 +21,11 @@ namespace gs {
   extern QString configDirectoryAssetsU2net;
   extern QString cacheDirectory;
   extern QFileInfo pathDatabase;
-  extern QMap<QString, QSharedPointer<TextureTag>> cacheTextureTags;
+
+  extern QHash<QString, QSharedPointer<Texture>> TEXTURES;
+  extern QHash<QString, QSharedPointer<Texture>> TEXTURES_LOWER;
+  extern QList<QSharedPointer<Texture>> TEXTURES_FLAT;
+  extern TextureTagManager *textureTagManager;
 
   extern std::function<bool(void*)> FUNC_GENERATE_VMT_VTF_FILES;
   extern std::function<bool(void*)> FUNC_GENERATE_STB_FILES;
@@ -58,18 +65,30 @@ enum class TextureImageType {
   textureImageTypeCount
 };
 
+enum class AssetPackType {
+  assetPackTexture = 0,
+  assetPackModel,
+  assetPackMusic,
+  assetPackSound
+};
+
+enum class AssetPackStatus {
+  AssetPackStatusIdle = 0,
+  AssetPackStatusInstalling,
+  AssetPackStatusUnpacking,
+  AssetPackStatusReady
+};
+
+struct AssetPackListHTTPResult {
+  QString name;
+  QString description;
+  AssetPackType type;
+  AssetPackStatus status;
+};
+
 enum class TexImgExt {
   PNG,
   JPG
-};
-
-struct TextureTag {
-  explicit TextureTag(QString tag) {
-    name = tag.toLower();
-  }
-
-  QString name = "";
-  unsigned int score = 0;
 };
 
 struct PackedFile {

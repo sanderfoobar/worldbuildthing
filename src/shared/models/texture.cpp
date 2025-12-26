@@ -1,5 +1,4 @@
 #include "shared/models/texture.h"
-#include "shared/models/asset_pack.h"
 #include "shared/models/texture_image_getters_setters.h"
 
 #include "shared/lib/materialpropertiestemplate.h"
@@ -89,9 +88,9 @@ void Texture::setMaterialPropertiesTemplate() {
 
   // from tags
   if (m_resourceTemplateID.isEmpty()) {
-    for (const auto& tag: this->tags().keys()) {
-      if (gs::nameToResourceTemplateLookup.contains(tag)) {
-        m_resourceTemplateID = gs::nameToResourceTemplateLookup[tag];
+    for (const auto& tag: this->get_tags()) {
+      if (gs::nameToResourceTemplateLookup.contains(tag->name())) {
+        m_resourceTemplateID = gs::nameToResourceTemplateLookup[tag->name()];
         this->material_properties_template = gs::resourceTemplates[m_resourceTemplateID];
         break;
       }

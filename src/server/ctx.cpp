@@ -13,7 +13,7 @@
 #include "shared/lib/stb/stb_image.h"
 #include "shared/lib/zlib_compressor.h"
 #include "shared/lib/globals.h"
-
+#include "shared/models/asset_loader.h"
 #include "shared/lib/utils.h"
 #include "server/lib/vtf/vtf.h"
 #include "server/ctx.h"
@@ -28,7 +28,7 @@ Ctx::Ctx() {
 
   stbi_set_flip_vertically_on_load(true);
 
-  assetPackManager = new AssetPackManager(this);
+  gs::textureTagManager = new TextureTagManager(this);
   config()->set(ConfigKeys::CacheDir, gs::cacheDirectory);
 
 #ifdef GENERATE_VTF
@@ -53,15 +53,16 @@ Ctx::Ctx() {
   start_webserver();
 
   QString err;
-  assetPackManager->load(gs::configDirectoryAssetsTextures, err);
-  assetPackManager->scan();
-
-  connect(assetPackManager, &AssetPackManager::scanProgress, [=](const int pct) {
-    // qDebug() << "Scan progress" << pct;
-      if (pct == 100) {
-        // initGodotResourceTemplates();
-      }
-  });
+  asset_loader::from_disk();
+  // assetPackManager->load_from_disk(gs::configDirectoryAssetsTextures, err);
+  // assetPackManager->scan();
+  //
+  // connect(assetPackManager, &AssetPackManager::scanProgress, [=](const int pct) {
+  //   // qDebug() << "Scan progress" << pct;
+  //     if (pct == 100) {
+  //       // initGodotResourceTemplates();
+  //     }
+  // });
 
   g::ctx = this;
 }

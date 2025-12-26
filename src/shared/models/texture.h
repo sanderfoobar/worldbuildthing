@@ -1,4 +1,12 @@
 #pragma once
+#include <chrono>
+#include <utility>
+#include <functional>
+
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QJsonArray>
@@ -6,16 +14,11 @@
 #include <QJsonObject>
 #include <QMap>
 #include <QObject>
-#include <chrono>
-#include <utility>
-#include <functional>
 
-#include "../../server/external/VTFLib/thirdparty/include/Compressonator.h"
-#include "../lib/globals.h"
+// #include "server/external/VTFLib/thirdparty/include/Compressonator.h"
+#include "shared/lib/globals.h"
 #include "shared/lib/config.h"
 #include "shared/lib/utils.h"
-
-class AssetPack;
 
 extern QMap<QString, QPixmap> pixmapCache;
 
@@ -47,10 +50,7 @@ public:
   QMap<TextureSize, QMap<QString, QSharedPointer<TextureImage>>> variants;
   QList<QSharedPointer<TextureImage>> textures;
 
-  AssetPack* asset_pack() const;
-  void set_asset_pack(AssetPack* pack);
-
-  QMap<QString, QSharedPointer<TextureTag>> tags() {
+  QSet<QSharedPointer<TextureTag>> get_tags() {
     return m_tags;
   }
 
@@ -59,16 +59,17 @@ public:
   QString get_author();
   void set_license(const QString &license);
   QString get_license();
-  void append_tag(QSharedPointer<TextureTag> &tag);
+  void set_tags(const QSet<QSharedPointer<TextureTag>> &tags);
+  void append_tag(const QSharedPointer<TextureTag> &tag);
   QFileInfo path_thumbnail();
   void setMaterialPropertiesTemplate();
 
-  QSharedPointer<TextureImage> get_image(TextureImageType type ,TextureSize size) const;
+  [[nodiscard]] QSharedPointer<TextureImage> get_image(TextureImageType type ,TextureSize size) const;
 
   // @fuzzy: fallback to other resolutions when `size` is not available
-  QSharedPointer<TextureImage> get_diffuse(TextureSize size, bool fuzzy = false) const;
+  [[nodiscard]] QSharedPointer<TextureImage> get_diffuse(TextureSize size, bool fuzzy = false) const;
 
-  void setTexture(const QSharedPointer<TextureImage> &tex);
+  void set_texture(const QSharedPointer<TextureImage> &tex);
   void addVariant(TextureSize tsize, const QString &variant, const QSharedPointer<TextureImage> &tex);
   void setDiffuse(TextureSize tsize, const QSharedPointer<TextureImage> &tex);
   void setRoughness(TextureSize tsize, const QSharedPointer<TextureImage> &tex);
@@ -82,7 +83,7 @@ public:
   void setSpecular(TextureSize tsize, const QSharedPointer<TextureImage> &tex);
   void setScattering(TextureSize tsize, const QSharedPointer<TextureImage> &tex);
 
-  QList<TextureSize> available_sizes() const;
+  [[nodiscard]] QList<TextureSize> available_sizes() const;
 
   QString to_tres(TextureSize tsize);
   QJsonObject to_json();
@@ -90,10 +91,9 @@ public:
 private:
   QString m_license;
   QString m_author;
-  AssetPack* m_asset_pack = nullptr;
   QString m_resourceTemplateID;
 
-  QMap<QString, QSharedPointer<TextureTag>> m_tags;
+  QSet<QSharedPointer<TextureTag>> m_tags;
   QVariantList m_tags_as_variants;
 };
 

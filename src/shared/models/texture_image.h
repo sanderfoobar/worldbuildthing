@@ -17,11 +17,16 @@
 class TextureImage final : public QObject {
 Q_OBJECT
 
+// enum class TexImgExt {
+//   PNG,
+//   JPG
+// };
+
 public:
-  uint32_t getPickingID() const { return m_pickingID; }
+  [[nodiscard]] uint32_t getPickingID() const { return m_pickingID; }
   void setPickingID(const uint32_t id) { m_pickingID = id; }
 
-  GLuint getAlbedoTexture() const { return m_albedoID; }
+  [[nodiscard]] GLuint getAlbedoTexture() const { return m_albedoID; }
   void setAlbedoTexture(const GLuint id) { m_albedoID = id; }
 
   void bind() const;
@@ -40,6 +45,7 @@ public:
   QString name;
   QString name_original;
   QString name_technical;
+  QString name_lower;
   TexImgExt ext;
   QString variant;
   bool is_alpha = false;
@@ -49,7 +55,6 @@ public:
 
   QSize dimensions;
   QFileInfo path;
-  AssetPack* pack = nullptr;
 
   QString basedir;
 
@@ -58,8 +63,7 @@ public:
   void metadata_generate();
 
   void ensure_thumbnail(bool force, QString &err);
-  void setPack(AssetPack* p_pack);
-  void setPath(const QFileInfo &path);
+  void set_path(const QFileInfo &path);
   void setTextureImageType(TextureImageType _type);
   QFileInfo path_thumbnail();
 
@@ -67,28 +71,29 @@ public:
   void inspect_checksum();
 
   // const getters/setters
-  QFileInfo path_get(TextureImageType ttype) const;
-  QString size_str() const;
-  QString type_str() const;
-  QFileInfo path_vmt() const;
-  QFileInfo path_stb() const;
-  QFileInfo path_vtf() const;
-  QString get_ext() const;
-  QString file_color() const;
-  QString file_normal() const;
-  QString file_displacement() const;
-  QString file_metalness() const;
-  QString file_opacity() const;
-  QString file_emission() const;
-  QString file_specular() const;
-  QString file_scattering() const;
-  QString file_roughness() const;
-  QString file_ambient_occlussion() const;
-  QString file_arm() const;
-  QString file_cache_thumbnail() const;
+  [[nodiscard]] QFileInfo path_get(TextureImageType ttype) const;
+  [[nodiscard]] QString size_str() const;
+  [[nodiscard]] QString type_str() const;
+  [[nodiscard]] QFileInfo path_vmt() const;
+  [[nodiscard]] QFileInfo path_stb() const;
+  [[nodiscard]] QFileInfo path_vtf() const;
+  [[nodiscard]] QString get_ext() const;
+  [[nodiscard]] QString file_color() const;
+  [[nodiscard]] QString file_normal() const;
+  [[nodiscard]] QString file_displacement() const;
+  [[nodiscard]] QString file_metalness() const;
+  [[nodiscard]] QString file_opacity() const;
+  [[nodiscard]] QString file_emission() const;
+  [[nodiscard]] QString file_specular() const;
+  [[nodiscard]] QString file_scattering() const;
+  [[nodiscard]] QString file_roughness() const;
+  [[nodiscard]] QString file_ambient_occlussion() const;
+  [[nodiscard]] QString file_arm() const;
+  [[nodiscard]] QString file_cache_thumbnail() const;
 
-  QJsonObject to_json() const;
+  [[nodiscard]] QJsonObject to_json() const;
   static QSharedPointer<TextureImage> from_json(const QJsonObject &o);
+  rapidjson::Value to_rapidjson(rapidjson::Document::AllocatorType& alloc) const;
 };
 
 struct QJsonTextureImage {

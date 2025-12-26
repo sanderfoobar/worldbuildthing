@@ -1,4 +1,8 @@
 #pragma once
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include "shared/lib/globals.h"
 #include "texture.h"
 #include "texture_image.h"
@@ -21,23 +25,23 @@ inline QString TextureImage::file_cache_thumbnail() const {
 }
 
 inline QFileInfo TextureImage::path_vtf() const {
-  const auto _basedir =
-      gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
-  std::filesystem::create_directories(_basedir.toStdString());
-  return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vtf");
+  // const auto _basedir =
+  //     gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
+  // std::filesystem::create_directories(_basedir.toStdString());
+  // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vtf");
 }
 
 inline QFileInfo TextureImage::path_vmt() const {
-  const auto _basedir =
-      gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
-  std::filesystem::create_directories(_basedir.toStdString());
-  return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vmt");
+  // const auto _basedir =
+  //     gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
+  // std::filesystem::create_directories(_basedir.toStdString());
+  // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vmt");
 }
 
 inline QFileInfo TextureImage::path_stb() const {
-  const auto _basedir = gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "stb" + QDir::separator();
-  std::filesystem::create_directories(_basedir.toStdString());
-  return QFileInfo(_basedir + QDir::separator() + this->name_original + ".stb");
+  // const auto _basedir = gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "stb" + QDir::separator();
+  // std::filesystem::create_directories(_basedir.toStdString());
+  // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".stb");
 }
 
 inline QString TextureImage::size_str() const {
@@ -104,13 +108,29 @@ inline QJsonObject TextureImage::to_json() const {
   return obj;
 }
 
-inline void TextureImage::setPack(AssetPack *p_pack) { pack = p_pack; }
+inline rapidjson::Value TextureImage::to_rapidjson(rapidjson::Document::AllocatorType& alloc) const {
+  rapidjson::Value obj(rapidjson::kObjectType);
+  obj.AddMember("name", rapidjson::Value(name.toUtf8().constData(), alloc), alloc);
+  obj.AddMember("name_original", rapidjson::Value(name_original.toUtf8().constData(), alloc), alloc);
+  obj.AddMember("name_lower", rapidjson::Value(name_lower.toUtf8().constData(), alloc), alloc);
+  obj.AddMember("name_technical", rapidjson::Value(name_technical.toUtf8().constData(), alloc), alloc);
+  obj.AddMember("variant", rapidjson::Value(variant.toUtf8().constData(), alloc), alloc);
+  obj.AddMember("filename", rapidjson::Value(path.fileName().toUtf8().constData(), alloc), alloc);
+
+  if (!checksum.isEmpty())
+    obj.AddMember("checksum", rapidjson::Value(checksum.toUtf8().constData(), alloc), alloc);
+  if (channels > 0)
+    obj.AddMember("channels", channels, alloc);
+  if (size != TextureSize::null)
+    obj.AddMember("size", static_cast<int>(size), alloc);
+  return obj;
+}
 
 inline void TextureImage::setTextureImageType(const TextureImageType _type) {
   this->type = _type;
 }
 
-inline void TextureImage::setPath(const QFileInfo &path) {
+inline void TextureImage::set_path(const QFileInfo &path) {
   this->path = path;
   this->basedir = path.absoluteDir().path() + "/";
 }
@@ -122,6 +142,7 @@ inline QSharedPointer<TextureImage> TextureImage::from_json(const QJsonObject &o
 
   auto tex_img = QSharedPointer<TextureImage>::create(tex_info, tex_ext);
   tex_img->name = tex_name;
+  tex_img->name = tex_name.toLower();
   tex_img->name_original = o["name_original"].toString();
   tex_img->name_technical = o["name_technical"].toString();
   tex_img->variant = o["variant"].toString();

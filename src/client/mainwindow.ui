@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1321</width>
+    <height>815</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>x</string>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>16</width>
+    <height>16</height>
+   </size>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>PushButton</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionTextureView"/>
+   <addaction name="separator"/>
+   <addaction name="actionMeshView"/>
+   <addaction name="separator"/>
+   <addaction name="actionShop"/>
+   <addaction name="separator"/>
+   <addaction name="actionConsoleView"/>
+   <addaction name="separator"/>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1321</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menuw00t">
+    <property name="title">
+     <string>File</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <widget class="QMenu" name="menuMatting">
+     <property name="title">
+      <string>Matting</string>
+     </property>
+     <addaction name="actionAlpha_matting"/>
+    </widget>
+    <addaction name="menuMatting"/>
+    <addaction name="actionVTF_VMT"/>
+   </widget>
+   <widget class="QMenu" name="menuEditor">
+    <property name="title">
+     <string>Editor</string>
+    </property>
+    <widget class="QMenu" name="menuViewport">
+     <property name="title">
+      <string>Viewport</string>
+     </property>
+     <widget class="QMenu" name="menuantialais">
+      <property name="title">
+       <string>MSAA</string>
+      </property>
+      <addaction name="action_aa_x0"/>
+      <addaction name="action_aa_x2"/>
+     </widget>
+     <addaction name="menuantialais"/>
+    </widget>
+    <addaction name="menuViewport"/>
+   </widget>
+   <addaction name="menuw00t"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuEditor"/>
+  </widget>
+  <action name="actionTextureView">
+   <property name="icon">
+    <iconset resource="assets.qrc">
+     <normaloff>:/assets/grid.png</normaloff>:/assets/grid.png</iconset>
+   </property>
+   <property name="text">
+    <string>texView</string>
+   </property>
+  </action>
+  <action name="actionConsoleView">
+   <property name="icon">
+    <iconset resource="assets.qrc">
+     <normaloff>:/assets/console-64.png</normaloff>:/assets/console-64.png</iconset>
+   </property>
+   <property name="text">
+    <string>console</string>
+   </property>
+  </action>
+  <action name="actionMeshView">
+   <property name="icon">
+    <iconset resource="assets.qrc">
+     <normaloff>:/assets/3d-model.png</normaloff>:/assets/3d-model.png</iconset>
+   </property>
+   <property name="text">
+    <string>3d</string>
+   </property>
+  </action>
+  <action name="actionShop">
+   <property name="icon">
+    <iconset resource="assets.qrc">
+     <normaloff>:/assets/shop-icon.png</normaloff>:/assets/shop-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Shop</string>
+   </property>
+  </action>
+  <action name="actionAlpha_matting">
+   <property name="text">
+    <string>Alpha</string>
+   </property>
+  </action>
+  <action name="actionVTF_VMT">
+   <property name="text">
+    <string>VTF/VMT</string>
+   </property>
+  </action>
+  <action name="action_aa_x0">
+   <property name="text">
+    <string>0x</string>
+   </property>
+  </action>
+  <action name="action_aa_x2">
+   <property name="text">
+    <string>2x</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="lib/qt/theme.qrc"/>
+  <include location="assets.qrc"/>
+ </resources>
+ <connections/>
+</ui>

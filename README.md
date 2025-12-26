@@ -2,6 +2,15 @@
 
 3d editor
 
+```bash
+cd external/qcoro
+cmake -Bbuild -DCMAKE_PREFIX_PATH=/home/dsc/Qt691_full_no_debug/6.9.3/gcc_64 -DUSE_QT_VERSION=6 -DCORO_BUILD_EXAMPLES=OFF -DQCORO_BUILD_TESTING=OFF .
+sudo make -Cbuild -j12
+
+cmake -Bbuild -DCMAKE_PREFIX_PATH=/home/dsc/Qt691_full_no_debug/6.9.3/gcc_64 .
+make -Cbuild -j12
+```
+
 ### Server
 
 todo

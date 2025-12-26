@@ -16,6 +16,7 @@ endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 option(BUILD_SERVER "" ON)
 option(BUILD_CLIENT "" OFF)
 option(PLUGIN_AUTOMASK "" OFF)
@@ -30,14 +31,26 @@ find_package(ZLIB REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(RapidJSON REQUIRED)
 find_package(PNG REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Concurrent Multimedia WebSockets Sql HttpServer OpenGL QuickWidgets Gui Quick Qml)
 find_package(OpenGL REQUIRED)
-#pkg_check_modules(LIBTORRENT REQUIRED libtorrent)
-#pkg_check_modules(LIBTORRENT_RASTERBAR REQUIRED libtorrent-rasterbar)
+
+find_package(QCoro6 REQUIRED COMPONENTS Core Network DBus)
+qcoro_enable_coroutines()
+find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets Concurrent Multimedia WebSockets Sql HttpServer OpenGL QuickWidgets Gui Quick Qml ShaderTools)
 
 add_subdirectory(src/shared)
-#add_subdirectory(client)
+add_subdirectory(src/client)
 
 if(BUILD_SERVER)
   add_subdirectory(src/server)
 endif()
+
+add_executable(QtConsoleApp
+    main.cpp
+)
+
+target_link_libraries(QtConsoleApp
+    QCoro6::Network
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Network
+)

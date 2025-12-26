@@ -23,20 +23,23 @@ inline QString Texture::get_license() {
   return m_license;
 }
 
-inline void Texture::set_asset_pack(AssetPack* pack) {
-  m_asset_pack = pack;
-}
-
-inline AssetPack* Texture::asset_pack() const { return m_asset_pack; }
-
-inline void Texture::append_tag(QSharedPointer<TextureTag> &tag) {
-  if(!m_tags.contains(tag->name)) {
-    m_tags[tag->name] = tag;
-    m_tags_as_variants << tag->name;
+inline void Texture::set_tags(const QSet<QSharedPointer<TextureTag>> &tags) {
+  for (const auto &tag : tags) {
+    const auto tag_name = tag->name();
+    m_tags_as_variants << tag->name();
   }
+
+  m_tags = tags;
 }
 
-inline QSharedPointer<TextureImage> Texture::get_diffuse(TextureSize size, bool fuzzy) const {
+inline void Texture::append_tag(const QSharedPointer<TextureTag> &tag) {
+  const auto tag_name = tag->name();
+  m_tags << tag;
+  m_tags_as_variants << tag_name;
+  tag->usage_counter_increment();
+}
+
+inline QSharedPointer<TextureImage> Texture::get_diffuse(const TextureSize size, const bool fuzzy) const {
   if(diffuse.contains(size))
     return diffuse[size];
 
@@ -98,7 +101,7 @@ inline QSharedPointer<TextureImage> Texture::get_image(TextureImageType type ,Te
   return nullptr;
 }
 
-inline void Texture::setTexture(const QSharedPointer<TextureImage> &tex) {
+inline void Texture::set_texture(const QSharedPointer<TextureImage> &tex) {
   // @TODO: support variants
   if(tex->type == TextureImageType::diffuse) {
     this->setDiffuse(tex->size, tex);
@@ -193,16 +196,14 @@ inline void Texture::setScattering(TextureSize tsize, const QSharedPointer<Textu
 
 inline QJsonObject Texture::to_json() {
   QJsonObject o;
+
+  // o["id"] = m_id;
   o["name"] = name;
-  o["name_lower"] = name_lower;
-  o["num_pixels"] = static_cast<int>(num_pixels);
   if(m_author.size()) o["author"] = m_author;
   if(m_license.size()) o["license"] = m_license;
 
-  QJsonArray tags;
-  for(const auto &k: m_tags.keys())
-    tags.append(k);
-  o["tags"] = tags;
+  o["name_lower"] = name_lower;
+  o["num_pixels"] = static_cast<int>(num_pixels);
 
   auto packImages = [](const QMap<TextureSize, QSharedPointer<TextureImage>> &src) {
     QJsonObject out;
@@ -251,8 +252,8 @@ inline QSharedPointer<Texture> from_json(const QJsonObject &o) {
 
   for(const auto &t: o["tags"].toArray()) {
     auto tag_name = t.toString();
-    if (gs::cacheTextureTags.contains(tag_name))
-      tex->append_tag(gs::cacheTextureTags[tag_name]);
+    if (gs::textureTagManager->has_tag(tag_name))
+      tex->append_tag(gs::textureTagManager->get_or_insert(tag_name));
 
     auto tag = QSharedPointer<TextureTag>::create(tag_name);
     tex->append_tag(tag);
@@ -316,7 +317,8 @@ inline QString Texture::to_tres(TextureSize tsize) {
     return "";
   }
 
-  const QString asset_pack = tex->asset_pack()->name();
+  //const QString asset_pack = tex->asset_pack()->name();
+  QString asset_pack = "a";
   QString texname = tex->name;
 
   bool isAlpha = diffuse->is_alpha;

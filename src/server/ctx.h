@@ -16,12 +16,13 @@
 #include "lib/image_auto_masker.h"
 #endif
 
+#include "server/web/web_webserver.h"
 #include "shared/lib/seaquel.h"
+
+#include "shared/models/tags.h"
 #include "shared/models/texture.h"
 #include "shared/models/texture_image.h"
 #include "shared/models/treemodel.h"
-#include "server/asset_pack_manager.h"
-#include "server/web/web_webserver.h"
 
 class Ctx;
 extern Ctx* g_instance;
@@ -37,7 +38,6 @@ public:
   bool is_debug;
   QString preloadModel;
 
-  AssetPackManager *assetPackManager;
   WebServer *web_server = nullptr;
   // ImageAutoMasker *imageAutoMasker;
   // TextureModel *textureModel;

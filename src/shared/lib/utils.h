@@ -39,6 +39,9 @@ public:
   static std::chrono::time_point<std::chrono::high_resolution_clock> timeStart();
   static void timeEnd(std::string label, std::chrono::time_point<std::chrono::high_resolution_clock> start);
 
+  static bool isEqual(float a, float b);
+  static bool isEqual(QVector3D a, QVector3D b);
+
   static unsigned int getCpuCount()
   {
     int cpuCount = 1;
