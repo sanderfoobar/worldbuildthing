@@ -3,6 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QuickFBO 1.0
 
+import Main 1.0
+
 Rectangle {
     id: root
     anchors.fill: parent
@@ -41,12 +43,94 @@ Rectangle {
             width: fullscreenMode ? root.width : test.vSplit
             height: fullscreenMode ? root.height : test.hSplit
 
-            QuickFBO {
+            Item {
                 id: view3d
                 anchors.fill: parent
                 anchors.rightMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
                 anchors.bottomMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
+
+                QuickFBO {
+                    id: fbo
+                    anchors.fill: parent
+                    mirrorVertically: true
+                }
+
+                Rectangle {
+                    height: 40
+                    width: parent.width
+                    color: "#4D000000"
+                    z: fbo.z + 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        spacing: 10
+
+                        // full item
+                        Rectangle {
+                            color: "white"
+                            Layout.preferredHeight: 28
+                            Layout.preferredWidth: 64
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Item {
+                            Layout.preferredWidth: 40
+                            Layout.fillHeight: true
+                        }
+
+
+                        ViewportMenuBarTextButton {
+                            text: "View"
+                            Layout.preferredHeight: 26
+                            Layout.preferredWidth: textItem.implicitWidth + 22
+                        }
+
+                        ViewportMenuBarTextButton {
+                            text: "Select"
+                            Layout.preferredHeight: 26
+                            Layout.preferredWidth: textItem.implicitWidth + 22
+                        }
+
+                        ViewportMenuBarTextButton {
+                            text: "Add"
+                            Layout.preferredHeight: 26
+                            Layout.preferredWidth: textItem.implicitWidth + 22
+                        }
+
+                        ViewportMenuBarTextButton {
+                            text: "Object"
+                            Layout.preferredHeight: 26
+                            Layout.preferredWidth: textItem.implicitWidth + 22
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                        }
+                    }
+                }
             }
+
+            // ColumnLayout {
+            //     id: view3d
+            //     anchors.fill: parent
+            //     anchors.rightMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
+            //     anchors.bottomMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
+            //     spacing: 0
+            //
+            //     Rectangle {
+            //         color: "green"
+            //         Layout.preferredHeight: 38
+            //         Layout.fillWidth: true
+            //     }
+            //
+            //     QuickFBO {
+            //         Layout.fillWidth: true
+            //         Layout.fillHeight: true
+            //         mirrorVertically: true
+            //     }
+            // }
 
             ShaderEffect {
                 id: view3dshader
@@ -91,18 +175,25 @@ Rectangle {
                     console.log("state:", state);
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onEntered: parent.borderActive = true
-                    onExited: parent.borderActive = false
+                // MouseArea {
+                //     anchors.fill: parent
+                //     hoverEnabled: true
+                //     onEntered: parent.borderActive = true
+                //     onExited: parent.borderActive = false
+                //
+                //     propagateComposedEvents: true
+                //
+                //     onClicked: (mouseEvent) => {
+                //         console.log("Mouse in parent:", mouseEvent.x, mouseEvent.y)
+                //     }
+                // }
 
-                    propagateComposedEvents: true
-
-                    onClicked: (mouseEvent) => {
-                        console.log("Mouse in parent:", mouseEvent.x, mouseEvent.y)
-                    }
-                }
+                // Rectangle {
+                //     z: 349
+                //     height: 38
+                //     width: parent.width
+                //     color: "red"
+                // }
             }
 
             Text {
@@ -110,9 +201,9 @@ Rectangle {
                 color: "white"
                 font.pointSize: 14
                 anchors.top: parent.top
+                anchors.topMargin: 50
                 anchors.left: parent.left
                 anchors.margins: 12
-                anchors.topMargin: 6
             }
         }
 
