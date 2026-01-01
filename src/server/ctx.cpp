@@ -15,6 +15,10 @@
 #include "shared/lib/globals.h"
 #include "shared/models/asset_loader.h"
 #include "shared/lib/utils.h"
+#include "shared/models/texture_model.h"
+#include "shared/models/texture_proxy_model.h"
+#include "shared/models/texture_manager.h"
+
 #include "server/lib/vtf/vtf.h"
 #include "server/ctx.h"
 #include "server/globals.h"
@@ -22,6 +26,8 @@
 using namespace std::chrono;
 
 Ctx::Ctx() {
+  gs::programMode = ProgramMode::server;
+
   g_instance = this;
   Utils::init();
   init_material_templates();
@@ -29,6 +35,15 @@ Ctx::Ctx() {
   stbi_set_flip_vertically_on_load(true);
 
   gs::textureTagManager = new TextureTagManager(this);
+  gs::textureManager = new TextureManager(this);
+
+  gs::textureModel = new TextureModel(this);
+  gs::textureProxyModel = new TextureProxyModel(this);
+
+  gs::textureProxyModel->setSourceModel(gs::textureModel);
+  // proxy->setNameFilter("brick");
+  gs::textureProxyModel->setLimit(5);
+
   config()->set(ConfigKeys::CacheDir, gs::cacheDirectory);
 
 #ifdef GENERATE_VTF

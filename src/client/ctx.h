@@ -20,6 +20,11 @@
 #include "client/lib/globals.h"
 #include "shared/lib/config.h"
 
+class TextureQMLProvider final : public QQuickImageProvider {
+public:
+  explicit TextureQMLProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+  QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override;
+};
 
 class Ctx;
 extern Ctx* g_instance;
@@ -61,6 +66,7 @@ signals:
   void applicationLog(const QString &msg);
   void windowTitle(QString title);
   void GLContextAvailable();
+  void texturesUpdated();
 
 private slots:
   void onApplicationLog(const QString &msg);

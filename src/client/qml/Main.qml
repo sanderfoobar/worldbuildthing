@@ -12,7 +12,7 @@ Rectangle {
     color: "#232a4e"
 
     property string bgColor: root.color
-    property bool fullscreenMode: false
+    property bool fullscreenMode: true
     property int splitterWidth: 10
 
     focus: true
@@ -24,7 +24,15 @@ Rectangle {
     }
 
     Rectangle {
+        anchors.fill: parent
+        color: "red"
+
+
+    }
+
+    Rectangle {
         id: test
+        visible: false
         anchors.fill: parent
         color: "transparent"
 
@@ -53,6 +61,22 @@ Rectangle {
                     id: fbo
                     anchors.fill: parent
                     mirrorVertically: true
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.AllButtons
+
+                    onPressed: (mouseEvent) => {
+                        if (mouseEvent.button === Qt.RightButton)
+                            console.log("Right button pressed at", mouseEvent.x, mouseEvent.y)
+                    }
+
+                    onReleased: (mouseEvent) => {
+                        if (mouseEvent.button === Qt.RightButton)
+                            console.log("Right button released at", mouseEvent.x, mouseEvent.y)
+                    }
                 }
 
                 Rectangle {

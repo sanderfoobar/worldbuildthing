@@ -7,30 +7,26 @@
 #include <QLabel>
 #include <QCheckBox>
 
-#include "ctx.h"
+#include "shared/models/texture_model.h"
+#include "shared/models/texture_proxy_model.h"
 
+#include "client/ctx.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 MainWindow *MainWindow::pMainWindow = nullptr;
 
-QFrame* MainWindow::coloredWidget(const QString &colorName) {
-  QFrame *w = new QFrame;
-  w->setStyleSheet(QString("background-color: %1").arg(colorName));
-  w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  return w;
-}
-
 MainWindow::MainWindow(Ctx *ctx, QWidget *parent) :
     QMainWindow(parent),
     m_ctx(ctx),
-    m_keys_wsad({Qt::Key_W, Qt::Key_S, Qt::Key_A, Qt::Key_D}),
+    m_keys_wsad({Qt::Key_W, Qt::Key_S, Qt::Key_A, Qt::Key_D, Qt::Key_Q, Qt::Key_E}),
     ui(new Ui::MainWindow) {
 
   g::devicePixelRatio = this->devicePixelRatio();
 
   ui->setupUi(this);
   pMainWindow = this;
+
   // installEventFilter(this);
 
   // gl context available
@@ -123,10 +119,12 @@ void MainWindow::createQml() {
 
   auto *qctx = m_quickWidget->rootContext();
   qctx->setContextProperty("ctx", m_ctx);
-
+  qctx->setContextProperty("TextureModel", gs::textureModel);
+  qctx->setContextProperty("TextureProxyModel", gs::textureProxyModel);
   qctx->setContextProperty("mainwindow", this);
+  qctx->engine()->addImageProvider(QLatin1String("textureProvider"), g::textureThumbnailQmlProvider);
 
-  m_quickWidget->setSource(QUrl(QStringLiteral("qrc:/Main/qml/Main.qml")));
+  m_quickWidget->setSource(QUrl(QStringLiteral("qrc:/Main/qml/Test.qml")));
   m_quickWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   m_quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
   ui->centralWidget->layout()->addWidget(m_quickWidget);
@@ -216,6 +214,25 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
   }
 
   QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::mouseEventFreeLookEnable() {
+  m_rightMouseDown = true;
+  m_firstMouse = true;
+  setCursor(Qt::BlankCursor);
+  // store position to restore after release
+  m_mouseReleaseRestorePos = QCursor::pos();
+  m_lastMouseX = width() / 2;
+  m_lastMouseY = height() / 2;
+  // warp mouse to center of widget
+  QPoint center = mapToGlobal(QPoint(width() / 2, height() / 2));
+  QCursor::setPos(center);
+}
+
+void MainWindow::mouseEventFreeLookDisable() {
+  m_rightMouseDown = false;
+  unsetCursor();
+  QCursor::setPos(m_mouseReleaseRestorePos);
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event) {

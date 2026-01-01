@@ -4,13 +4,16 @@
 #include <QObject>
 #include <QDebug>
 #include <QFileInfo>
+#include <QPixmapCache>
 #include <QReadWriteLock>
 #include <QOpenGLContext>
+#include <QQuickImageProvider>
 
 #include "client/gl2/texture_manager.h"
 #include "client/gl2/engine3d.h"
 #include "shared/lib/bitflags.h"
 
+class TextureQMLProvider;
 namespace g {
   enum class RenderMode : int {
     PBR              = 1 << 0,
@@ -26,7 +29,6 @@ namespace g {
   extern QOpenGLContext *glcontext;
   extern gl::GLTextureManager* glTextureManager;
   extern gl::Engine3D *engine3D;
-  //extern RenderMode renderMode;
   extern Flags<RenderMode> renderModes;
 
   extern qreal devicePixelRatio;
@@ -37,11 +39,13 @@ namespace g {
   extern GLuint texDefaultGray;
   extern GLuint texDefaultNormal;
 
+  extern TextureQMLProvider *textureThumbnailQmlProvider;
+
   struct RenderModeName {
     RenderMode mode;
     const char* name;
   };
-  inline const std::array<std::pair<g::RenderMode, const char*>, 8> renderModesLookup = {{
+  inline const std::array<std::pair<RenderMode, const char*>, 8> renderModesLookup = {{
     { RenderMode::PBR, "PBR" },
     { RenderMode::POINTS, "POINTS" },
     { RenderMode::FULLBRIGHT, "FULLBRIGHT" },

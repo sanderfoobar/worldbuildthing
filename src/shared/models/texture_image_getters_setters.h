@@ -21,7 +21,7 @@ inline QString TextureImage::file_ambient_occlussion() const {
 }
 inline QString TextureImage::file_arm() const { return QString("%1_%2_ARM." + get_ext()).arg(name, getTextureSize(size)); }
 inline QString TextureImage::file_cache_thumbnail() const {
-  return QString("%1-%2.%3").arg(name, checksum, this->is_alpha ? "png" : "jpg");
+  return QString("%1-%2.%3").arg(name, m_checksum, this->is_alpha ? "png" : "jpg");
 }
 
 inline QFileInfo TextureImage::path_vtf() const {
@@ -29,6 +29,7 @@ inline QFileInfo TextureImage::path_vtf() const {
   //     gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
   // std::filesystem::create_directories(_basedir.toStdString());
   // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vtf");
+  return {};
 }
 
 inline QFileInfo TextureImage::path_vmt() const {
@@ -36,12 +37,14 @@ inline QFileInfo TextureImage::path_vmt() const {
   //     gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "vmtvtf" + QDir::separator();
   // std::filesystem::create_directories(_basedir.toStdString());
   // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".vmt");
+  return {};
 }
 
 inline QFileInfo TextureImage::path_stb() const {
   // const auto _basedir = gs::cacheDirectory + QDir::separator() + pack->name() + QDir::separator() + "stb" + QDir::separator();
   // std::filesystem::create_directories(_basedir.toStdString());
   // return QFileInfo(_basedir + QDir::separator() + this->name_original + ".stb");
+  return {};
 }
 
 inline QString TextureImage::size_str() const {
@@ -64,6 +67,9 @@ inline QString TextureImage::get_ext() const {
   else
     return "unknown";
 }
+
+inline QString TextureImage::checksum_get() const { return m_checksum; }
+inline unsigned short TextureImage::channels_get() const { return m_channels; }
 
 inline QFileInfo TextureImage::path_get(TextureImageType ttype) const {
   QString fn;
@@ -99,10 +105,10 @@ inline QFileInfo TextureImage::path_get(TextureImageType ttype) const {
 
 inline QJsonObject TextureImage::to_json() const {
   QJsonObject obj;
-  if (!checksum.isEmpty())
-    obj["checksum"] = checksum;
-  if (channels > 0)
-    obj["channels"] = channels;
+  if (!m_checksum.isEmpty())
+    obj["checksum"] = m_checksum;
+  if (m_channels > 0)
+    obj["channels"] = m_channels;
   if (size != TextureSize::null)
     obj["size"] = static_cast<int>(size);
   return obj;
@@ -117,10 +123,10 @@ inline rapidjson::Value TextureImage::to_rapidjson(rapidjson::Document::Allocato
   obj.AddMember("variant", rapidjson::Value(variant.toUtf8().constData(), alloc), alloc);
   obj.AddMember("filename", rapidjson::Value(path.fileName().toUtf8().constData(), alloc), alloc);
 
-  if (!checksum.isEmpty())
-    obj.AddMember("checksum", rapidjson::Value(checksum.toUtf8().constData(), alloc), alloc);
-  if (channels > 0)
-    obj.AddMember("channels", channels, alloc);
+  if (!m_checksum.isEmpty())
+    obj.AddMember("checksum", rapidjson::Value(m_checksum.toUtf8().constData(), alloc), alloc);
+  if (m_channels > 0)
+    obj.AddMember("channels", m_channels, alloc);
   if (size != TextureSize::null)
     obj.AddMember("size", static_cast<int>(size), alloc);
   return obj;
@@ -129,6 +135,9 @@ inline rapidjson::Value TextureImage::to_rapidjson(rapidjson::Document::Allocato
 inline void TextureImage::setTextureImageType(const TextureImageType _type) {
   this->type = _type;
 }
+
+inline void TextureImage::set_channels(unsigned short channels) { m_channels = channels; }
+inline void TextureImage::set_checksum(const QString& checksum) { m_checksum = checksum; }
 
 inline void TextureImage::set_path(const QFileInfo &path) {
   this->path = path;
@@ -147,8 +156,8 @@ inline QSharedPointer<TextureImage> TextureImage::from_json(const QJsonObject &o
   tex_img->name_technical = o["name_technical"].toString();
   tex_img->variant = o["variant"].toString();
   tex_img->is_alpha = o["is_alpha"].toBool();
-  tex_img->checksum = o["checksum"].toString();
-  tex_img->channels = static_cast<unsigned short>(o["channels"].toInt());
+  tex_img->set_checksum(o["checksum"].toString());
+  tex_img->set_channels(static_cast<unsigned short>(o["channels"].toInt()));
 
   tex_img->dimensions = QSize(
     o["width"].toInt(),

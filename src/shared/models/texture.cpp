@@ -22,8 +22,7 @@ QFileInfo Texture::path_thumbnail() {
       TextureSize::x256}) {
     if(diffuse.contains(tsize)) {
       const QSharedPointer<TextureImage> tex = diffuse[tsize];
-      if (const QFileInfo path = tex->path_thumbnail(); path.exists())
-        return path;
+      return tex->path_thumbnail();
     }
   }
 

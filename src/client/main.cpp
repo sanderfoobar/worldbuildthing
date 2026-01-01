@@ -24,6 +24,7 @@ Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
 
 int main(int argc, char **argv) {
   qDebug() << "Qt version:" << qVersion();
+  QPixmapCache::setCacheLimit(2000 * 1024);
 
   QSurfaceFormat format;
   format.setSamples(0);

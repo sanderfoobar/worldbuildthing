@@ -9,8 +9,13 @@
 class MaterialPropertiesTemplate;
 class Texture;
 struct TextureTag;
+enum class ProgramMode;
+class TextureManager;
+class TextureModel;
+class TextureProxyModel;
 
 namespace gs {
+  extern ProgramMode programMode;
   extern QString configRoot;
   extern QString homeDir;
   extern QString configDirectory;
@@ -20,12 +25,13 @@ namespace gs {
   extern QString configDirectoryAssetsModels;
   extern QString configDirectoryAssetsU2net;
   extern QString cacheDirectory;
+  extern QString cacheDirectoryTextures;
   extern QFileInfo pathDatabase;
 
-  extern QHash<QString, QSharedPointer<Texture>> TEXTURES;
-  extern QHash<QString, QSharedPointer<Texture>> TEXTURES_LOWER;
-  extern QList<QSharedPointer<Texture>> TEXTURES_FLAT;
   extern TextureTagManager *textureTagManager;
+  extern TextureManager *textureManager;
+  extern TextureModel *textureModel;
+  extern TextureProxyModel *textureProxyModel;
 
   extern std::function<bool(void*)> FUNC_GENERATE_VMT_VTF_FILES;
   extern std::function<bool(void*)> FUNC_GENERATE_STB_FILES;
@@ -33,6 +39,11 @@ namespace gs {
   extern QMap<QString, MaterialPropertiesTemplate*> resourceTemplates;
   extern QMap<QString, QString> nameToResourceTemplateLookup;
 }
+
+enum class ProgramMode {
+  server = 0,
+  client
+};
 
 enum class TextureLicense {
   cc0 = 1,

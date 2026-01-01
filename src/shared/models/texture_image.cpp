@@ -42,13 +42,13 @@ void TextureImage::inspect_channels_and_dimensions() {
   }
 
   if(info.success) {
-    channels = info.channels;
+    this->set_channels(info.channels);
     dimensions = {info.width, info.height};
   } else {
     qWarning() << "png/jpg inspection failed for" << path.absoluteFilePath();
   }
 
-  is_alpha = channels == 4;
+  is_alpha = m_channels == 4;
 }
 
 void TextureImage::inspect_checksum() {
@@ -60,7 +60,8 @@ void TextureImage::inspect_checksum() {
   // auto part = file.read(120000);
   // checksum = QString(QCryptographicHash::hash(part, QCryptographicHash::Md5).toHex());
   // file.close();
-  checksum = QString("%1%2").arg(name_original, QString::number(path.size()));
+  const auto checksum = QString("%1%2").arg(name_original, QString::number(path.size()));
+  set_checksum(checksum);
 }
 
 void TextureImage::ensure_thumbnail(const bool force, QString &err) {
@@ -110,21 +111,24 @@ void TextureImage::metadata_generate() {
 }
 
 QFileInfo TextureImage::path_thumbnail() {
-  if(channels == 0) {
+  if(m_channels == 0) {
     qWarning() << "cannot generate thumbnail path without inspecting channels for " << name;
     return {};
   }
 
-  if (checksum.isEmpty()) {
+  if (m_checksum.isEmpty()) {
     inspect_checksum();
-    if (checksum.isEmpty()) {
+    if (m_checksum.isEmpty()) {
       qWarning() << name << "cannot generate thumbnail path without checksum";
       return {};
     }
   }
 
   const QString ext = is_alpha ? "png" : "jpg";
-  auto x = QFileInfo(gs::cacheDirectory + QDir::separator() + checksum + "." + ext);
+
+  // @TODO: remove/modify baseDir to be the same for client/server
+  auto baseDir = gs::programMode == ProgramMode::server ? gs::cacheDirectory + QDir::separator() : gs::cacheDirectoryTextures + QDir::separator();
+  auto x = QFileInfo(baseDir + m_checksum + "." + ext);
   // qDebug() << x.absoluteFilePath();
   return x;
 }

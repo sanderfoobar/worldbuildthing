@@ -1,4 +1,5 @@
 #include "client/lib/globals.h"
+#include "client/ctx.h"
 
 namespace g {
   qreal devicePixelRatio;
@@ -12,6 +13,8 @@ namespace g {
   GLuint texDefaultBlack = 0;
   GLuint texDefaultGray = 0;
   GLuint texDefaultNormal = 0;
+
+  TextureQMLProvider *textureThumbnailQmlProvider = nullptr;
 
   // std::function<bool(const QFileInfo&, const QFileInfo&, const QFileInfo&, const QString&, const QString&)> FUNC_GENERATE_VMT_VTF_FILES = nullptr;
   // std::function<bool(void*)> FUNC_GENERATE_VMT_VTF_FILES = nullptr;

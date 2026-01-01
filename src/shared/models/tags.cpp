@@ -2,6 +2,10 @@
 
 TextureTagManager::TextureTagManager(QObject *parent) : QObject(parent) {}
 
+void TextureTagManager::insert(const QSharedPointer<TextureTag> &tex) {
+
+}
+
 QSharedPointer<TextureTag> &TextureTagManager::get_or_insert(const QString &name) {
   const QString key = name.toLower();
   if (!m_tags.contains(key)) {

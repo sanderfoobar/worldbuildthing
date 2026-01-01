@@ -39,6 +39,14 @@ inline void Texture::append_tag(const QSharedPointer<TextureTag> &tag) {
   tag->usage_counter_increment();
 }
 
+// inline QString Texture::thumbnail_name() const {
+//   auto diffuse = get_diffuse(TextureSize::null, true);
+//   if (diffuse.isNull())
+//     return {};
+//
+//   return diffuse->path_thumbnail().fileName();
+// }
+
 inline QSharedPointer<TextureImage> Texture::get_diffuse(const TextureSize size, const bool fuzzy) const {
   if(diffuse.contains(size))
     return diffuse[size];
@@ -53,8 +61,8 @@ inline QSharedPointer<TextureImage> Texture::get_diffuse(const TextureSize size,
     TextureSize::x768,
     TextureSize::x512,
     TextureSize::x256}) {
-    if(diffuse.contains(size))
-      return diffuse[size];
+    if(diffuse.contains(tsize))
+      return diffuse[tsize];
     }
 
   return nullptr;
@@ -239,6 +247,9 @@ inline QJsonObject Texture::to_json() {
   }
 
   o["images"] = images;
+
+  if (!diffuse.isEmpty())
+    o["thumb"] = this->thumbnail_name();
   return o;
 }
 

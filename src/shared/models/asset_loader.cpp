@@ -1,13 +1,125 @@
+#include <QTemporaryFile>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QDir>
+
 #include "asset_loader.h"
 
 #include "shared/lib/globals.h"
 #include "shared/lib/utils.h"
 #include "texture.h"
-#include "texture_image.h"
 #include "texture_getters_setters.h"
+#include "texture_image.h"
 #include "texture_image_getters_setters.h"
+#include "texture_manager.h"
 
 namespace asset_loader {
+  void unpack_files(const QString &binFilePath) {
+    QString baseDir = gs::cacheDirectoryTextures + QDir::separator();
+    QDir().mkpath(baseDir);
+
+    QFile file(binFilePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+      qCritical() << "Failed to open bin file:" << binFilePath;
+      return;
+    }
+
+    // Read the JSON header (first line)
+    QByteArray headerLine = file.readLine();
+    if (headerLine.isEmpty() || headerLine[0] != '[') {
+      qCritical() << "Bad bin file, missing JSON header";
+      return;
+    }
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(headerLine, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isArray()) {
+      qCritical() << "Failed to parse JSON header:" << parseError.errorString();
+      return;
+    }
+
+    QJsonArray metadataArray = doc.array();
+
+    // fileDataSection starts after the first line
+    qint64 dataSectionOffset = headerLine.size();
+
+    for (const QJsonValue &val : metadataArray) {
+      if (!val.isObject())
+        continue;
+
+      QJsonObject obj = val.toObject();
+      QString fileName = obj.value("fileName").toString();
+      qint64 offset = obj.value("offset").toVariant().toLongLong();
+      qint64 size = obj.value("fileSize").toVariant().toLongLong();
+
+      if (!file.seek(dataSectionOffset + offset)) {
+        qCritical() << "Failed to seek to file offset:" << fileName;
+        continue;
+      }
+
+      QByteArray fileData = file.read(size);
+      if (fileData.size() != size) {
+        qCritical() << "Unexpected read size for file:" << fileName;
+        continue;
+      }
+
+      QString outPath = QDir(baseDir).filePath(fileName);
+      QDir().mkpath(QFileInfo(outPath).path());
+
+      QFile outFile(outPath);
+      if (!outFile.open(QIODevice::WriteOnly)) {
+        qCritical() << "failed to write file:" << outPath;
+        continue;
+      }
+
+      outFile.write(fileData);
+      outFile.close();
+      qDebug() << "wrote file:" << outPath;
+    }
+
+    file.close();
+  }
+
+  QCoro::Task<> load_thumbnail_from_network(QStringList thumbnail_filenames) {
+    QNetworkAccessManager networkAccessManager;
+
+    const QUrl url("http://127.0.0.1:3000/api/1/texture/thumbnails_pack");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonArray filenamesArray;
+    for (const QString &f: thumbnail_filenames)
+      filenamesArray.append(f);
+
+    const QJsonObject payload{{"filenames", filenamesArray}};
+    const QByteArray json_data = QJsonDocument(payload).toJson();
+
+    const std::unique_ptr<QNetworkReply> reply(co_await networkAccessManager.post(request, json_data));
+    if (reply->error()) {
+      qCritical() << "Network request failed:" << reply->errorString();
+      co_return;
+    }
+
+    qDebug() << "Network request successful, data = reply->readAll()";
+    const QByteArray data = reply->readAll();
+    qDebug() << "tmpFile";
+
+    QTemporaryFile tmpFile;
+    if (!tmpFile.open()) {
+      qCritical() << "Failed to open temporary file";
+      co_return;
+    }
+
+    tmpFile.write(data);
+    tmpFile.flush();
+    tmpFile.seek(0);
+    qDebug() << "Data written to temporary file:" << tmpFile.fileName();
+
+    unpack_files(tmpFile.fileName());
+  }
+
   QCoro::Task<> load_from_network() {
     QNetworkAccessManager networkAccessManager;
     const QString url = "http://127.0.0.1:3000/api/1/textures";
@@ -28,8 +140,7 @@ namespace asset_loader {
       co_return;
     }
 
-    gs::TEXTURES.clear();
-    gs::TEXTURES_FLAT.clear();
+    gs::textureManager->clear();
 
     const QJsonObject obj = doc.object();
     const QJsonObject meta = obj.value("meta").toObject();
@@ -47,6 +158,7 @@ namespace asset_loader {
       auto tex_name = tex_blob.value("name").toString();
       auto tex_author = tex_blob.value("author").toString();
       auto tex_license = tex_blob.value("license").toString();
+      auto tex_thumbnail = tex_blob.value("thumbnail").toString();
 
       auto tex = QSharedPointer<Texture>(new Texture(tex_name));
       tex->set_author(tex_author);
@@ -62,6 +174,8 @@ namespace asset_loader {
         }
       }
 
+      if (!tex_thumbnail.isEmpty())
+        tex->set_thumbnail_name(tex_thumbnail);
       tex->set_tags(tex_tags);
 
       auto tex_images = tex_blob.value("images").toObject();
@@ -70,21 +184,35 @@ namespace asset_loader {
         const QJsonObject size_map = it_.value().toObject();
 
         for (auto size_it = size_map.begin(); size_it != size_map.end(); ++size_it) {
-          const QString name = size_it.value().toObject().value("name").toString();
-          const QString name_original = size_it.value().toObject().value("name_original").toString();
-          const QString filename = size_it.value().toObject().value("filename").toString();
+          auto tex_obj = size_it.value().toObject();
+          const QString name = tex_obj.value("name").toString();
+          const QString name_original = tex_obj.value("name_original").toString();
+          const QString filename = tex_obj.value("filename").toString();
+          const int channels = tex_obj.value("channels").toInt();
+          const QString checksum = tex_obj.value("checksum").toString();
+
           TexImgInfo texinfo(name_original);
           const TexImgExt ext = filename.endsWith(".png", Qt::CaseInsensitive) ? TexImgExt::PNG : TexImgExt::JPG;
 
           auto tex_img = QSharedPointer<TextureImage>::create(texinfo, ext);
+          tex_img->set_channels(channels);
+          tex_img->set_checksum(checksum);
           tex->set_texture(tex_img);
         }
       }
 
-      gs::TEXTURES[tex->name] = tex;
-      gs::TEXTURES_LOWER[tex->name_lower] = tex;
-      gs::TEXTURES_FLAT << tex;
+      gs::textureManager->add(tex);
     }
+
+    // ensure we have all the thumbnails
+    QStringList missing_thumbnails;
+    for (const auto& tex: gs::textureManager->all()) {
+      const auto thumb_path = tex->path_thumbnail();
+      if (!thumb_path.exists())
+        missing_thumbnails << thumb_path.fileName();
+    }
+    if (!missing_thumbnails.isEmpty())
+      asset_loader::load_thumbnail_from_network(missing_thumbnails);
   }
 
   void from_disk() {
@@ -191,9 +319,7 @@ namespace asset_loader {
     }
 
     for (const auto& tex : textures) {
-      gs::TEXTURES[tex->name] = tex;
-      gs::TEXTURES_LOWER[tex->name_lower] = tex;
-      gs::TEXTURES_FLAT << tex;
+      gs::textureManager->add(tex);
     }
   }
 }

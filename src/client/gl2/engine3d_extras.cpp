@@ -196,7 +196,6 @@ void Engine3D::mousePressEvent(QMouseEvent *_event) {
 }
 
 void Engine3D::updateCamera(float deltaTime) {
-  // WASD movement
   if (m_keysPressed['W'] || m_keysPressed['w'])
     m_camera->moveForward(deltaTime, m_cameraSpeed);
   if (m_keysPressed['S'] || m_keysPressed['s'])
@@ -205,9 +204,9 @@ void Engine3D::updateCamera(float deltaTime) {
     m_camera->moveLeft(deltaTime, m_cameraSpeed);
   if (m_keysPressed['D'] || m_keysPressed['d'])
     m_camera->moveRight(deltaTime, m_cameraSpeed);
-  if (m_keysPressed['Q'] || m_keysPressed['q'])
-    m_camera->moveUp(deltaTime, m_cameraSpeed);
   if (m_keysPressed['E'] || m_keysPressed['e'])
+    m_camera->moveUp(deltaTime, m_cameraSpeed);
+  if (m_keysPressed['Q'] || m_keysPressed['q'])
     m_camera->moveDown(deltaTime, m_cameraSpeed);
 }
 

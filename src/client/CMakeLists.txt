@@ -69,6 +69,7 @@ qt6_add_qml_module(client
         RESOURCE_PREFIX ""
         QML_FILES
         qml/Main.qml
+        qml/Test.qml
         qml/ViewportMenuBarTextButton.qml
 )
 

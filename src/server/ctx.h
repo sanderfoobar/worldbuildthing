@@ -39,11 +39,6 @@ public:
   QString preloadModel;
 
   WebServer *web_server = nullptr;
-  // ImageAutoMasker *imageAutoMasker;
-  // TextureModel *textureModel;
-  // TextureProxyModel *textureProxyModel;
-  // TextureQMLProvider *textureQmlProvider;
-  // TreeModel *treez;
 
   QString configRoot;
   QString homeDir;
@@ -55,7 +50,6 @@ public:
 
 signals:
   void applicationLog(const QString &msg);
-  void windowTitle(QString title);
 
 private slots:
   void onApplicationLog(const QString &msg);

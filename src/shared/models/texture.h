@@ -64,6 +64,9 @@ public:
   QFileInfo path_thumbnail();
   void setMaterialPropertiesTemplate();
 
+  [[nodiscard]] QString thumbnail_name() const { return m_thumbnail_name; };
+  void set_thumbnail_name(const QString& thumbnail_name) { m_thumbnail_name = thumbnail_name; }
+
   [[nodiscard]] QSharedPointer<TextureImage> get_image(TextureImageType type ,TextureSize size) const;
 
   // @fuzzy: fallback to other resolutions when `size` is not available
@@ -92,6 +95,7 @@ private:
   QString m_license;
   QString m_author;
   QString m_resourceTemplateID;
+  QString m_thumbnail_name;
 
   QSet<QSharedPointer<TextureTag>> m_tags;
   QVariantList m_tags_as_variants;

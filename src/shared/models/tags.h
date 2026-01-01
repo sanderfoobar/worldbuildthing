@@ -27,6 +27,7 @@ Q_OBJECT
 
 public:
   explicit TextureTagManager(QObject *parent = nullptr);
+  void insert(const QSharedPointer<TextureTag> &tex);
 
   QSharedPointer<TextureTag> &get_or_insert(const QString &name);
   bool remove(const QString &name);

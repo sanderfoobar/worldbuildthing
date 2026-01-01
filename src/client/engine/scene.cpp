@@ -9,6 +9,7 @@
 
 #include "../lib/vmfpp/vmfpp.h"
 #include "lib/globals.h"
+#include "shared/models/texture_manager.h"
 
 namespace gl {
 
@@ -120,20 +121,19 @@ QSharedPointer<Scene> Scene::VMF(const std::filesystem::path &path) {
         auto cube = std::make_shared<GameObject>(mesh);
 
         for (int face = 0; face < 6; ++face) {
-          int ieowg = 1;
           auto &cube_side = cubeSides.at(face);
           auto &mat_str = cube_side.material;
 
           // associated mat
           QSharedPointer<Material> mat;
           if (cube_side.material_name_was_uppercased) {
-            auto has_tex = gs::TEXTURES_LOWER.contains(QString::fromStdString(cube_side.material));
-            if (!has_tex) {
+            auto tex = gs::textureManager->get_lower(QString::fromStdString(cube_side.material));
+            if (!tex.isNull()) {
               mat = g::glTextureManager->get_by_name("devtexture01");
             }
           } else {
-            auto has_tex = gs::TEXTURES.contains(QString::fromStdString(cube_side.material));
-            if (!has_tex) {
+            auto tex = gs::textureManager->get_lower(QString::fromStdString(cube_side.material));
+            if (!tex.isNull()) {
               mat = g::glTextureManager->get_by_name("devtexture01");
             }
           }

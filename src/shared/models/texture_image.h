@@ -58,8 +58,6 @@ public:
 
   QString basedir;
 
-  QString checksum;
-  unsigned short channels = 0;
   void metadata_generate();
 
   void ensure_thumbnail(bool force, QString &err);
@@ -70,7 +68,12 @@ public:
   void inspect_channels_and_dimensions();
   void inspect_checksum();
 
+  void set_channels(unsigned short channels);
+  void set_checksum(const QString& checksum);
+
   // const getters/setters
+  [[nodiscard]] QString checksum_get() const;
+  [[nodiscard]] unsigned short channels_get() const;
   [[nodiscard]] QFileInfo path_get(TextureImageType ttype) const;
   [[nodiscard]] QString size_str() const;
   [[nodiscard]] QString type_str() const;
@@ -94,6 +97,10 @@ public:
   [[nodiscard]] QJsonObject to_json() const;
   static QSharedPointer<TextureImage> from_json(const QJsonObject &o);
   rapidjson::Value to_rapidjson(rapidjson::Document::AllocatorType& alloc) const;
+
+private:
+  QString m_checksum;
+  unsigned short m_channels = 0;
 };
 
 struct QJsonTextureImage {

@@ -10,14 +10,55 @@
 #include "server/web/routes/route_utils.h"
 #include "server/web/web_sessionstore.h"
 
-#include "shared/models/texture_getters_setters.h"
-#include "shared/models/texture_image_getters_setters.h"
 #include "shared/lib/file_packer.h"
 #include "shared/lib/utils.h"
+#include "shared/models/texture_getters_setters.h"
+#include "shared/models/texture_image_getters_setters.h"
+#include "shared/models/texture_manager.h"
 
 namespace AssetPackTextureRoute {
 
 void install(QHttpServer *server) {
+  server->route("/api/1/texture/thumbnails_pack", QHttpServerRequest::Method::Post, [](const QHttpServerRequest &request) {
+    QFuture<QHttpServerResponse> future = QtConcurrent::run([&request] {
+      const QUrlQuery query(request.url());
+
+      const QByteArray body = request.body();
+      const QJsonDocument doc = QJsonDocument::fromJson(body);
+      if (!doc.isObject())
+        return QHttpServerResponse(QHttpServerResponder::StatusCode::BadRequest);
+
+      const QJsonObject obj = doc.object();
+      if (!obj.contains("filenames") || !obj["filenames"].isArray())
+        return QHttpServerResponse("post body need filenames array", QHttpServerResponder::StatusCode::NotFound);
+
+      const QJsonArray filenames = obj["filenames"].toArray();
+      auto baseDir = gs::programMode == ProgramMode::server ? gs::cacheDirectory + QDir::separator() : gs::cacheDirectoryTextures + QDir::separator();
+
+      QList<QString> paths;
+      for (const QJsonValue &filename : filenames) {
+        auto path = baseDir + QDir::separator() + filename.toString();
+        QString safe_path;
+        auto path_safe = sanitizePath(path, safe_path);
+        int geiwowge = 1;
+        if (QFile::exists(path))
+          paths << path;
+      }
+
+      const QByteArray data = packFiles(paths);
+      // QFile::remove(filePath);
+
+      QHttpHeaders headers;
+      headers.insert(0, "Content-Disposition", QString("attachment; filename=\"%1\"").arg("thumbnails.bin"));
+
+      qDebug() << "sending len" << data.length();
+      QHttpServerResponse response("application/octet-stream", data);
+      response.setHeaders(std::move(headers));
+      return response;
+    });
+    return future;
+  });
+
   server->route("/api/1/textures", QHttpServerRequest::Method::Get, [](const QHttpServerRequest &request) {
     QFuture<QHttpServerResponse> future = QtConcurrent::run([&request] {
       if (g::web_requires_auth) {
@@ -45,7 +86,7 @@ void install(QHttpServer *server) {
 
       root.AddMember("tags", tags_arr, allocator);
 
-      for (const auto &tex: gs::TEXTURES_FLAT) {
+      for (const auto &tex: gs::textureManager->all()) {
         rapidjson::Value item(rapidjson::kObjectType);
         item.AddMember("name", rapidjson::Value(tex->name.toUtf8().constData(), allocator), allocator);
         item.AddMember("license", rapidjson::Value(tex->get_license().toUtf8().constData(), allocator), allocator);
@@ -107,6 +148,14 @@ void install(QHttpServer *server) {
         rapidjson::Value k;
         k.SetString(key.c_str(), static_cast<rapidjson::SizeType>(key.size()), allocator);
         item.AddMember("images", images, allocator);
+
+        // thumbnail
+        auto diffuse = tex->get_diffuse(TextureSize::null, true);
+        if (!diffuse.isNull()) {
+          auto fn = diffuse->path_thumbnail().fileName();
+          item.AddMember("thumbnail", rapidjson::Value(fn.toUtf8().constData(), allocator), allocator);
+        }
+
         meta.AddMember(k, item, allocator);
       }
 
@@ -123,38 +172,6 @@ void install(QHttpServer *server) {
     return future;
   });
 
-  // server->route("/api/1/textures", QHttpServerRequest::Method::Get, [](const QHttpServerRequest &request) {
-  //   QFuture<QHttpServerResponse> future = QtConcurrent::run([&request] {
-  //     const auto tex_name = tname.toLower();
-  //     if (g::web_requires_auth) {
-  //       const auto current_user = g::webSessions->get_user(request);
-  //       if (current_user.isNull())
-  //         return QHttpServerResponse("Unauthorized", QHttpServerResponder::StatusCode::Unauthorized);
-  //     }
-  //
-  //     const auto ap = g::ctx->assetPackManager->by_name(pname);
-  //     if (ap.isNull())
-  //       return QHttpServerResponse("application/json", "asset pack by name not found", QHttpServerResponder::StatusCode::NotFound);
-  //
-  //     if (!ap->textures_lower.contains(tex_name))
-  //       return QHttpServerResponse("application/json", "texture not found", QHttpServerResponder::StatusCode::NotFound);
-  //
-  //     const auto tex = ap->textures_lower[tex_name];
-  //     const auto thumb = tex->path_thumbnail();
-  //     const auto fp = thumb.absoluteFilePath();
-  //     const auto data = Utils::fileOpen(fp);
-  //
-  //     QHttpHeaders headers;
-  //     headers.insert(0, "Content-Disposition", QString("attachment; filename=\"%1\"").arg(thumb.fileName()));
-  //
-  //     qDebug() << "sending len" << data.length();
-  //     QHttpServerResponse response("application/octet-stream", data);
-  //     response.setHeaders(std::move(headers));
-  //     return response;
-  //
-  //   });
-  //   return future;
-  // });
 
   // server->route("/api/1/ap/<arg>/texture/<arg>/<arg>/<arg>", QHttpServerRequest::Method::Get, [](
   //     const QString& pname, const QString& tname, const QString &ttype, const QString &tsize, const QHttpServerRequest &request) {

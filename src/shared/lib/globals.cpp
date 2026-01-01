@@ -2,9 +2,12 @@
 
 #include "materialpropertiestemplate.h"
 #include "shared/models/texture.h"
+#include "shared/models/texture_model.h"
+#include "shared/models/texture_proxy_model.h"
 #include "globals.h"
 
 namespace gs {
+  ProgramMode programMode;
   QString configRoot;
   QString homeDir;
   QString configDirectory;
@@ -14,12 +17,13 @@ namespace gs {
   QString configDirectoryAssetsModels;
   QString configDirectoryAssetsU2net;
   QString cacheDirectory;
+  QString cacheDirectoryTextures;
   QFileInfo pathDatabase;
 
-  QHash<QString, QSharedPointer<Texture>> TEXTURES = {};
-  QHash<QString, QSharedPointer<Texture>> TEXTURES_LOWER = {};
-  QList<QSharedPointer<Texture>> TEXTURES_FLAT = {};
   TextureTagManager *textureTagManager = nullptr;
+  TextureManager *textureManager = nullptr;
+  TextureModel *textureModel = nullptr;
+  TextureProxyModel *textureProxyModel = nullptr;
 
   // std::function<bool(const QFileInfo&, const QFileInfo&, const QFileInfo&, const QString&, const QString&)>
   // FUNC_GENERATE_VMT_VTF_FILES = nullptr;

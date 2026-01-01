@@ -47,19 +47,19 @@ private:
 
   EditorMode m_editorMode = EditorMode::OBJECT;
 
-  // QWidget *m_centralContainer = nullptr;
-  QSplitter *m_mainSplitter = nullptr;
-  QSplitter *m_leftSplitter = nullptr;
-  QSplitter *m_rightSplitter = nullptr;
-
-  QFrame* coloredWidget(const QString &colorName);
-
-  void displayGrid();
-  void displayFullSingle();
-
   const QList<Qt::Key> m_keys_wsad;
+
+  Q_INVOKABLE void mouseEventFreeLookEnable();
+  Q_INVOKABLE void mouseEventFreeLookDisable();
+
+  bool m_rightMouseDown = false;
+  int m_lastMouseX, m_lastMouseY;
+  bool m_firstMouse;
+  bool m_mouseCaptured = false;
+  QPoint m_mouseReleaseRestorePos;
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void keyReleaseEvent(QKeyEvent *event) override;
 };
+
