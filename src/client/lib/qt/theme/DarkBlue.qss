@@ -1,10 +1,36 @@
 /*
-color_active=rgb(72,102,197);
+color_active=rgb(35, 114, 155);
 color_highlight=rgb(77,146,182);
-color_btn_highlight=rgb(106,132,217);
 color_border=rgb(52,96,119);
-color_grey=rgb(23,28,56);
-color_bg=rgb(35,42,78);
+color_grey=rgb(110,110,110);
+color_bg=rgb(1,1,1);
+*/
+
+QSplitter {
+    /* General splitter look */
+    background-color: $color_bg;
+}
+
+QSplitter::handle {
+    background-color: $color_bg;
+    border-left: 1px solid $color_border;
+}
+
+QSplitter::handle:hover {
+    background-color: $color_bg;
+    border-left: 1px solid $color_highlight;
+}
+
+QSplitter::handle:pressed {
+    background-color: $color_bg;
+    border-left: 1px solid $color_highlight;
+}
+
+/* Example for a dark theme */
+/*
+QSplitter { background-color: #2e2e2e; }
+QSplitter::handle { background-color: #4a4a4a; border: 1px solid #5a5a5a; }
+QSplitter::handle:hover { background-color: #6a6a6a; }
 */
 
 /* default color for widgets */
