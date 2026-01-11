@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/icons">
+    <qresource prefix="/icons_blender">
         <file>pointcloud_point.svg</file>
         <file>mesh_monkey.svg</file>
         <file>vis_sel_11.svg</file>

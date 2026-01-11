@@ -4,37 +4,70 @@
 #include <QScreen>
 #include <QAbstractItemView>
 #include <QKeyEvent>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QCheckBox>
 
 #include "shared/models/texture_model.h"
 #include "shared/models/texture_proxy_model.h"
 
+// #include "client/lib/globals.h"
 #include "client/ctx.h"
+#include "client/lib/utils.h"
 #include "mainwindow.h"
+
+#include <shared/lib/nameof.hpp>
+
 #include "ui_mainwindow.h"
 
 MainWindow *MainWindow::pMainWindow = nullptr;
 
+void MainWindow::onSetSidebarTitle(const QString& title) {
+  m_sidebarTitle = title;
+  emit sidebarTitleChanged();
+}
+
+void MainWindow::onSetSidebarItem(const QString& item) {
+  m_sidebarItem = item;
+  emit sidebarItemChanged();
+}
+
+void MainWindow::onEditorModeChanged(g::EditorMode mode) {
+  const int index = static_cast<int>(mode);
+  if (ui->comboMode->currentIndex() != index) {
+    QSignalBlocker b(ui->comboMode);
+    ui->comboMode->setCurrentIndex(index);
+  }
+}
+
 MainWindow::MainWindow(Ctx *ctx, QWidget *parent) :
     QMainWindow(parent),
-    m_ctx(ctx),
-    m_keys_wsad({Qt::Key_W, Qt::Key_S, Qt::Key_A, Qt::Key_D, Qt::Key_Q, Qt::Key_E}),
+    ctx_(ctx),
+    keys_wsad_({Qt::Key_W, Qt::Key_S, Qt::Key_A, Qt::Key_D, Qt::Key_Q, Qt::Key_E}),
     ui(new Ui::MainWindow) {
+  ui->setupUi(this);
+  utils::ui_zeroMargins(ui->root);
+  utils::ui_nukeLabels(ui->itemtree);
+
+  connect(ctx_, &Ctx::editorModeChanged, this, &MainWindow::onEditorModeChanged);
+
+  m_widgetProperties = new WidgetProperties(this);
+  m_widgetItemTree = new WidgetItemTree(this);
+  m_widgetProperties->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  m_widgetItemTree->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mainSidebarClicked("properties");
 
   g::devicePixelRatio = this->devicePixelRatio();
 
-  ui->setupUi(this);
   pMainWindow = this;
 
   // installEventFilter(this);
 
   // gl context available
-  connect(m_ctx, &Ctx::GLContextAvailable, [this] {
+  connect(ctx_, &Ctx::GLContextAvailable, [this] {
     // create 2d widget
     // m_glWidget2DGrid = new gl::GLWidget2DGrid(gl::GLWidget2DGrid::ViewType::Top, this);
     // connect(m_glWidget2DGrid, &gl::GLWidget2DGrid::initDone, this, [this] {
-    //
     // });
   });
 
@@ -45,43 +78,112 @@ MainWindow::MainWindow(Ctx *ctx, QWidget *parent) :
   const QRect screenGeometry = screen->availableGeometry();
   move((screenGeometry.width() - width()) / 2, (screenGeometry.height() - height()) / 2);
 
-  QLayout *mainLayout = ui->centralWidget->layout();
+  ui->comboMode->addItem(QIcon(":/icons_blender/object_datamode.svg"), "Object Mode");
+  ui->comboMode->addItem(QIcon(":/icons_blender/editmode_hlt.svg"), "Edit Mode");
+  ui->comboMode->addItem(QIcon(":/icons_blender/material.svg"), "Material Mode");
 
-  for (auto& [mode, name] : g::renderModesLookup) {
-    auto cb = new QCheckBox(QString::fromUtf8(name), this);
-    cb->setChecked(g::renderModes.has(mode));
-    connect(cb, &QCheckBox::toggled, this, [mode](bool checked) {
-      if (checked) g::renderModes.set(mode);
-      else g::renderModes.clear(mode);
+  connect(ui->comboMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
+    this, [this](int index) {
+      if (!ui->comboMode->hasFocus())
+        return;
+      ctx_->switchMode(static_cast<g::EditorMode>(index));
     });
-    mainLayout->addWidget(cb);
-  }
 
-  if (auto vLayout = qobject_cast<QVBoxLayout*>(mainLayout)) {
-    vLayout->addSpacing(32);
-  }
+  QLayout *mainLayout = qobject_cast<QVBoxLayout*>(ui->root->layout());
+  ui->toolbar->setContentsMargins(0, 0, 0, 6);
 
+  ui->toolbar_line->setFrameShape(QFrame::HLine);
+  ui->toolbar_line->setFrameShadow(QFrame::Plain);
+  ui->toolbar_line->setLineWidth(1);
+  ui->toolbar_line->setStyleSheet("color: #22a0ff;");
+
+  ui->root->setContentsMargins(0, 0, 0, 0);
+  ui->root->layout()->setSpacing(0);
+
+  // =====
+  ui->sidebar_left->setContentsMargins(0,0,0,0);
+  ui->sidebar_left->layout()->setSpacing(0);
+  ui->sidebar_right->setContentsMargins(0,0,0,0);
+  ui->sidebar_right->layout()->setSpacing(0);
+  ui->content->setContentsMargins(0,0,0,0);
+  ui->content->layout()->setSpacing(0);
+  ui->itemtree->setContentsMargins(0,0,0,0);
+  ui->itemtree->layout()->setSpacing(0);
+  // default sizes
+  auto window_width = width();
+  ui->splitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+  ui->toolbar->setMaximumHeight(48);
+  ui->toolbar->setMinimumHeight(48);
+  ui->toolbar->layout()->setSpacing(0);
+  ui->toolbar_layout->setSpacing(0);
+
+  // fixed left sidebar
+  ui->sidebar_left->setMinimumWidth(76);
+  ui->sidebar_left->setMaximumWidth(76);
+
+  // optional right sidebar
+  ui->sidebar_right->setMaximumWidth(76);
+
+  // tree
+  ui->itemtree->setMinimumWidth(150);
+  ui->itemtree->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+  // content
+  ui->content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+  // splitter stretch
+  ui->splitter->setStretchFactor(0, 0);
+  ui->splitter->setStretchFactor(1, 0);
+  ui->splitter->setStretchFactor(2, 1);
+  ui->splitter->setStretchFactor(3, 0);
+
+  // set initial sizes (optional, ensures sidebar_left is 6px at startup)
+  ui->splitter->setSizes({76, 200, 400, 76});
+
+  ui->toolbar->setContentsMargins(6, 0, 6, 0);
+
+  ui->content->layout()->setSpacing(0);
+  ui->content->layout()->setContentsMargins(0,0,0,0);
+
+  ui->itemtree->setContentsMargins(0,0,0,0);
+  ui->itemtree->layout()->setSpacing(0);
+  ui->itemtree->layout()->setContentsMargins(0,0,0,0);
+  ui->itemtree->layout()->setSpacing(8);
+  
+  // for (auto& [mode, name] : g::renderModesLookup) {
+  //   auto cb = new QCheckBox(QString::fromUtf8(name), this);
+  //   cb->setChecked(g::renderModes.has(mode));
+  //   connect(cb, &QCheckBox::toggled, this, [mode](bool checked) {
+  //     if (checked) g::renderModes.set(mode);
+  //     else g::renderModes.clear(mode);
+  //   });
+  //   mainLayout->addWidget(cb);
+  // }
+  // if (auto vLayout = qobject_cast<QVBoxLayout*>(mainLayout)) {
+  //   vLayout->addSpacing(32);
+  // }
 
   // m_glWidget3D = new GLWidget3D(this);
   // m_glWidget3D->setFocusPolicy(Qt::FocusPolicy::NoFocus);
   // connect(m_glWidget3D, &GLWidget3D::initDone, this, [this] {  });
 
-  createQml();
+  // createQml();
 
-  QWidget *controls = new QWidget(this);
-  controls->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-  controls->setMaximumWidth(256);
-  QVBoxLayout *controlsLayout = new QVBoxLayout(controls);
-
-  // Light direction sliders
-  auto addSlider = [&](const QString &label, int min, int max, int value, auto slot){
-    QSlider *slider = new QSlider(Qt::Horizontal);
-    slider->setRange(min, max);
-    slider->setValue(value);
-    controlsLayout->addWidget(new QLabel(label));
-    controlsLayout->addWidget(slider);
-    connect(slider, &QSlider::valueChanged, slot);
-  };
+  // QWidget *controls = new QWidget(this);
+  // controls->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+  // controls->setMaximumWidth(256);
+  // QVBoxLayout *controlsLayout = new QVBoxLayout(controls);
+  //
+  // // Light direction sliders
+  // auto addSlider = [&](const QString &label, int min, int max, int value, auto slot){
+  //   QSlider *slider = new QSlider(Qt::Horizontal);
+  //   slider->setRange(min, max);
+  //   slider->setValue(value);
+  //   controlsLayout->addWidget(new QLabel(label));
+  //   controlsLayout->addWidget(slider);
+  //   connect(slider, &QSlider::valueChanged, slot);
+  // };
 
   //mainLayout->addWidget(controls);
 
@@ -102,101 +204,108 @@ MainWindow::MainWindow(Ctx *ctx, QWidget *parent) :
 
     g::engine3D->set_scene(scene);
   });
+
+  createQmlSidebarLeft();
+  createQmlContent();
+  createQmlItemTreeHeader();
 }
 
-MainWindow::~MainWindow() {
-  delete ui;
+void MainWindow::createQmlItemTreeHeader() {
+  utils::ui_nukeLabels(ui->itemtree);
+
+  if(itemtreeHeader_ != nullptr) return;
+  itemtreeHeader_ = new QQuickWidget(this);
+
+  auto *qctx = itemtreeHeader_->rootContext();
+  qctx->setContextProperty("ctx", ctx_);
+  qctx->setContextProperty("window", this);
+  qctx->engine()->addImageProvider(QLatin1String("icons_blender"), g::iconsBlenderQmlProvider);
+  qctx->engine()->addImageProvider(QLatin1String("icons_godot"), g::iconsGodotQmlProvider);
+
+  itemtreeHeader_->setSource(QUrl(QStringLiteral("qrc:/Main/qml/itemtree/ItemTreeHeader.qml")));
+  itemtreeHeader_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  itemtreeHeader_->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  itemtreeHeader_->setMinimumSize(QSize(48, 48));
+  itemtreeHeader_->setMaximumSize(QSize(32323, 48));
+  auto *v = qobject_cast<QVBoxLayout*>(ui->itemtree->layout());
+  v->insertWidget(0, itemtreeHeader_);
+
+  itemtreeHeader_->setFocusPolicy(Qt::StrongFocus);
 }
 
-void MainWindow::createQml() {
-  if(m_quickWidget != nullptr) return;
-  m_quickWidget = new QQuickWidget(this);
+void MainWindow::createQmlSidebarLeft() {
+  if(quickSidebarLeft_ != nullptr) return;
+  quickSidebarLeft_ = new QQuickWidget(this);
 
-  connect(m_quickWidget->quickWindow(), &QQuickWindow::sceneGraphInitialized, [this] {
+  utils::ui_nukeLabels(ui->sidebar_left);
+
+  auto *qctx = quickSidebarLeft_->rootContext();
+  qctx->setContextProperty("ctx", ctx_);
+  qctx->setContextProperty("window", this);
+  qctx->engine()->addImageProvider(QLatin1String("icons_blender"), g::iconsBlenderQmlProvider);
+  qctx->engine()->addImageProvider(QLatin1String("icons_godot"), g::iconsGodotQmlProvider);
+
+  quickSidebarLeft_->setSource(QUrl(QStringLiteral("qrc:/Main/qml/sidebar/MainSidebar.qml")));
+  quickSidebarLeft_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  quickSidebarLeft_->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  ui->sidebar_left->layout()->addWidget(quickSidebarLeft_);
+
+  quickSidebarLeft_->setFocusPolicy(Qt::StrongFocus);
+}
+
+void MainWindow::createQmlContent() {
+  if(quickContent_ != nullptr) return;
+  quickContent_ = new QQuickWidget(this);
+
+  utils::ui_nukeLabels(ui->content);
+
+  connect(quickContent_->quickWindow(), &QQuickWindow::sceneGraphInitialized, [this] {
     g::glcontext = QOpenGLContext::currentContext();
-    emit m_ctx->GLContextAvailable();
+    emit ctx_->GLContextAvailable();
   });
 
-  auto *qctx = m_quickWidget->rootContext();
-  qctx->setContextProperty("ctx", m_ctx);
+  auto *qctx = quickContent_->rootContext();
+  qctx->setContextProperty("ctx", ctx_);
   qctx->setContextProperty("TextureModel", gs::textureModel);
   qctx->setContextProperty("TextureProxyModel", gs::textureProxyModel);
-  qctx->setContextProperty("mainwindow", this);
+  qctx->setContextProperty("window", this);
   qctx->engine()->addImageProvider(QLatin1String("textureProvider"), g::textureThumbnailQmlProvider);
+  qctx->engine()->addImageProvider(QLatin1String("icons_blender"), g::iconsBlenderQmlProvider);
+  qctx->engine()->addImageProvider(QLatin1String("icons_godot"), g::iconsGodotQmlProvider);
 
-  m_quickWidget->setSource(QUrl(QStringLiteral("qrc:/Main/qml/Test.qml")));
-  m_quickWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  m_quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
-  ui->centralWidget->layout()->addWidget(m_quickWidget);
-  m_quickWidget->setFocusPolicy(Qt::StrongFocus);
+  quickContent_->setSource(QUrl(QStringLiteral("qrc:/Main/qml/Main.qml")));
+  quickContent_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  quickContent_->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  ui->content->layout()->addWidget(quickContent_);
+  quickContent_->setFocusPolicy(Qt::StrongFocus);
 }
 
 void MainWindow::destroyQml() {
-  if(m_quickWidget == nullptr) return;
-  m_quickWidget->disconnect();
-  m_quickWidget->deleteLater();
-  m_quickWidget = nullptr;
+  if(quickContent_ == nullptr) return;
+  quickContent_->disconnect();
+  quickContent_->deleteLater();
+  quickContent_ = nullptr;
 }
 
 MainWindow* MainWindow::getInstance() { return pMainWindow; }
-Ctx* MainWindow::getContext() { return pMainWindow ? pMainWindow->m_ctx : nullptr; }
-
-// bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-//   if (event->type() == QEvent::KeyPress) {
-//     QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-//     if (keyEvent->key() == Qt::Key_Tab) {
-//       qDebug() << "Tab pressed!";
-//       return true; // eat it if you don’t want focus to change
-//     }
-//   }
-//   return QObject::eventFilter(obj, event);
-// }
-
-  // addSlider("Sun Pos X", -360, 360, int(m_glWidget3D->sunPosition().x),
-  //           [this](const int v){ auto pos = m_glWidget3D->sunPosition(); pos.x = float(v); m_glWidget3D->setSunPosition(pos); });
-  // addSlider("Sun Pos Y", -360, 360, int(m_glWidget3D->sunPosition().y),
-  //           [this](const int v){ auto pos = m_glWidget3D->sunPosition(); pos.y = float(v); m_glWidget3D->setSunPosition(pos); });
-  // addSlider("Sun Pos Z", -360, 360, int(m_glWidget3D->sunPosition().z),
-  //           [this](const int v){ auto pos = m_glWidget3D->sunPosition(); pos.z = float(v); m_glWidget3D->setSunPosition(pos); });
-  //
-  // addSlider("Bias", 0, 100, int(m_glWidget3D->shadowBias()),
-  //           [this](int v) {
-  //             m_glWidget3D->setShadowBias(static_cast<float>(v));
-  //           });
-  //
-  // // distance
-  // addSlider("Light Distance", 1, 1000, int(m_glWidget3D->shadowLightDistanceMultiplier()),
-  //           [this](int v){ m_glWidget3D->setShadowLightDistanceMultiplier(float(v)); });
-  //
-  // // Near/Far planes
-  // addSlider("Near Plane", 1, 100, int(m_glWidget3D->shadowNearPlane()*10.0f),
-  //           [this](int v) {
-  //             qDebug() << "Near Plane" << v;
-  //             m_glWidget3D->setShadowNearPlane(float(v));
-  //           });
-  // addSlider("Far Plane", 1, 1000, int(m_glWidget3D->shadowFarPlane()),
-  //           [this](int v) {
-  //             qDebug() << "Far Plane" << v;
-  //             m_glWidget3D->setShadowFarPlane(float(v));
-  //           });
-  //
-  // // Ortho scale
-  // addSlider("Ortho Scale", 1, 200, int(m_glWidget3D->shadowOrthoScale()*100),
-  //           [this](int v){ m_glWidget3D->setShadowOrthoScale(float(v)/100.0f); });
-  //
-  // // Y-up checkbox
-  // QCheckBox *checkYUp = new QCheckBox("Use Y-up");
-  // checkYUp->setChecked(m_glWidget3D->shadowUseYUp());
-  // controlsLayout->addWidget(checkYUp);
-  // connect(checkYUp, &QCheckBox::toggled, [this](bool checked){ m_glWidget3D->setShadowUseYUp(checked); });
-
+Ctx* MainWindow::getContext() { return pMainWindow ? pMainWindow->ctx_ : nullptr; }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
   const int key = event->key();
   // qDebug() << "Key pressed:" << QKeySequence(key).toString();
 
-  if (m_keys_wsad.contains(key)) {
+  if (keys_wsad_.contains(key)) {
     g::engine3D->handleKeyPress(event);
+    return;
+  }
+
+  if (key == Qt::Key_Tab) {
+    if (ctx_->editorMode == g::EditorMode::OBJECT) {
+      ctx_->switchMode(g::EditorMode::MATERIAL);
+    } else if (ctx_->editorMode == g::EditorMode::MATERIAL) {
+      ctx_->switchMode(g::EditorMode::OBJECT);
+    }
+
     return;
   }
 
@@ -237,10 +346,33 @@ void MainWindow::mouseEventFreeLookDisable() {
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event) {
   const int key = event->key();
-  if (m_keys_wsad.contains(key)) {
+  if (keys_wsad_.contains(key)) {
     g::engine3D->handleKeyRelease(event);
     return;
   }
 
   QMainWindow::keyReleaseEvent(event);
+}
+
+void MainWindow::mainSidebarClicked(const QString& menu_item) {
+  if (menu_item == "properties") {
+    m_widgetItemTree->hide();
+    ui->itemtree->layout()->removeWidget(m_widgetItemTree);
+    ui->itemtree->layout()->addWidget(m_widgetProperties);
+    m_widgetProperties->show();
+    onSetSidebarTitle("Properties");
+    onSetSidebarItem("properties");
+  } else if (menu_item == "itemtree") {
+    m_widgetProperties->hide();
+    ui->itemtree->layout()->removeWidget(m_widgetProperties);
+    ui->itemtree->layout()->addWidget(m_widgetItemTree);
+    m_widgetItemTree->show();
+    onSetSidebarTitle("Files");
+    onSetSidebarItem("itemtree");
+  }
+  emit sidebarItemChanged();
+}
+
+MainWindow::~MainWindow() {
+  delete ui;
 }

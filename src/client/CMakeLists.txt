@@ -22,13 +22,20 @@ file(GLOB ENGINE_SOURCE_FILES
 
 qt6_add_resources(RESOURCES
         assets.qrc
-        assets/icons_blender/blender_icons.qrc
         lib/qt/theme.qrc
 )
+
+qt6_add_big_resources(RESOURCES_ICONS
+        assets/icons_blender/blender_icons.qrc
+        assets/icons_godot/godot_icons.qrc
+)
+set_property(SOURCE assets/icons_blender/blender_icons.qrc PROPERTY SKIP_AUTORCC ON)
+set_property(SOURCE assets/icons_godot/godot_icons.qrc PROPERTY SKIP_AUTORCC ON)
 
 qt_add_executable(client main.cpp
         ${ENGINE_SOURCE_FILES}
         ${RESOURCES}
+        ${RESOURCES_ICONS}
         ${GENERATED_SHADERS}
 )
 
@@ -68,20 +75,19 @@ qt6_add_qml_module(client
         OUTPUT_DIRECTORY qml_main
         RESOURCE_PREFIX ""
         QML_FILES
+        qml/QButton.qml
+        qml/QCheckBox.qml
+        qml/QTextField.qml
         qml/Main.qml
         qml/Test.qml
+        qml/MaterialBrowser.qml
         qml/ViewportMenuBarTextButton.qml
+        qml/ViewportComponentShader.qml
+        qml/ViewportMaterialOverlay.qml
+        qml/sidebar/MainSidebar.qml
+        qml/sidebar/MainSidebarButton.qml
+        qml/itemtree/ItemTreeHeader.qml
 )
-
-#set(ENV{QSB_PROFILE} "330")
-#qt6_add_shaders(client
-#        GLSL "300es,330"
-#        PREFIX /
-#        FILES
-#        qml/rounded.vert
-#        qml/rounded.frag
-#)
-
 
 if(DEBUG)
     message(STATUS "DEBUG BUILD")

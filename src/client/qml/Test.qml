@@ -61,17 +61,9 @@ Rectangle {
                     height: thumb_size + root.default_thumb_meta_height
                     spacing: 0
 
-                    // Rectangle {
-                    //     color: "red"
-                    //     Layout.preferredHeight: parent.height - root.default_thumb_meta_height
-                    //     Layout.preferredWidth: parent.width
-                    // }
-
                     Image {
-                        // Component.onCompleted: { console.log(index);}
                         Layout.preferredHeight: parent.height - root.default_thumb_meta_height
                         Layout.preferredWidth: parent.width
-                        //color: index % 2 === 0 ? "green" : "blue"
                         source: "image://textureProvider/" + thumb;
                         fillMode: Image.PreserveAspectFit
 

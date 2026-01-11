@@ -14,11 +14,85 @@
 #include "shared/models/texture_manager.h"
 
 #include "ctx.h"
+
+#include <shared/lib/nameof.hpp>
+
 #include "gl/gl_functions.h"
 #include "shared/models/texture_model.h"
 #include "shared/models/texture_proxy_model.h"
 
 using namespace std::chrono;
+
+QPixmap GodotIconsQRCImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) {
+  if (id.isEmpty()) {
+    qCritical() << "GodotIconsQRCImageProvider requested id is empty";
+    return {};
+  }
+
+  QPixmap pixmap;
+  if (QPixmapCache::find(id, &pixmap))
+    return pixmap;
+
+  const auto fn = QString(":/icons_godot/%1").arg(id);
+  QFile f(fn);
+  if (f.open(QIODevice::ReadOnly)) {
+    pixmap.load(fn);
+    QPixmapCache::insert(id, pixmap);
+    return pixmap;
+  }
+
+  const auto baseDir = "/home/dsc/CLionProjects/godot/texture_browser/src/client/assets/icons_godot/";
+  if (QFile::exists(baseDir + id)) {
+    pixmap.load(baseDir + id);
+    QPixmapCache::insert(id, pixmap);
+    return pixmap;
+  }
+
+  return pixmap;
+}
+
+QPixmap BlenderIconsQRCImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) {
+  if (id.isEmpty()) {
+    qCritical() << "TextureQMLProvider requested id is empty";
+    return {};
+  }
+
+  // auto fn = QString(":/%1/data.txt").arg(item);
+  QPixmap pixmap;
+  // QFile f(fn);
+  //
+  // for (auto item: QStringList({"icons_blender", "icons_godot"})) {
+  //   auto fn = QString(":/%1/data.txt").arg(item);
+  //   QFile f(fn);
+  //   if (f.open(QIODevice::ReadOnly)) {
+  //     pixmap.load(fn);
+  //     QPixmapCache::insert(id, pixmap);
+  //     return pixmap;
+  //   }
+  // }
+  //
+  // const auto baseDir = "/home/dsc/CLionProjects/godot/texture_browser/src/client/assets/";
+  // for (auto item: QStringList({"icons_blender", "icons_godot"})) {
+  //   const auto path = baseDir + item + "/" + id;
+  //   qDebug() << path;
+  //
+  //   if (!QPixmapCache::find(id, &pixmap)) {
+  //     if (QFile::exists(path)) {
+  //       pixmap.load(path);
+  //       if (!requestedSize.isEmpty())
+  //         pixmap = pixmap.scaled(requestedSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  //       QPixmapCache::insert(id, pixmap);
+  //     }
+  //   } else if (!requestedSize.isEmpty()) {
+  //     pixmap = pixmap.scaled(requestedSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  //   }
+  //
+  //   if (size)
+  //     *size = pixmap.size();
+  // }
+
+  return pixmap;
+}
 
 QPixmap TextureQMLProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) {
   if (id.isEmpty()) {
@@ -58,6 +132,8 @@ Ctx::Ctx() {
   gs::textureModel = new TextureModel(this);
   gs::textureProxyModel = new TextureProxyModel(this);
   g::textureThumbnailQmlProvider = new TextureQMLProvider();
+  g::iconsBlenderQmlProvider = new BlenderIconsQRCImageProvider();
+  g::iconsGodotQmlProvider = new GodotIconsQRCImageProvider();
 
   gs::configRoot = QDir::homePath();
   gs::homeDir = QDir::homePath();
@@ -85,6 +161,13 @@ Ctx::Ctx() {
   }));
 
   unpackAppArtifacts();
+
+  qmlRegisterUncreatableMetaObject(
+    g::staticMetaObject,
+    "GlobalEnums", 1, 0,
+    "Editor",
+    "Enums only"
+  );
 
   asset_loader::load_from_network().then([] {
     gs::textureModel->refresh();
@@ -123,6 +206,16 @@ void Ctx::singleShot(int msec, QJSValue callback) const {
     if (callback.isCallable())
       callback.call();
   });
+}
+
+void Ctx::switchMode(g::EditorMode mode) {
+  if (mode == editorMode)
+    return;
+
+  editorMode = mode;
+
+  qDebug() << "new mode: " << NAMEOF_ENUM(mode);
+  emit editorModeChanged(editorMode);
 }
 
 Ctx* g_instance = nullptr;

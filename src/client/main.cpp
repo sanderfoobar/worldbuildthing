@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
   QApplication::setOrganizationDomain("kroket.io");
   QApplication::setOrganizationName("Kroket Ltd.");
   QApplication app(argc, argv);
+  QFont font = app.font();
+  font.setPointSize(20);
+  app.setFont(font);
 
   qmlRegisterType<gl::QuickFBO>("QuickFBO", 1, 0, "QuickFBO");
 
@@ -54,14 +57,14 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  const QString path_css = "/home/dsc/CLionProjects/godot/texture_engine/src/lib/qt/theme/DarkBlue.qss";
-  auto *css_theme = new CSSTheme(&app, path_css);
-
-#ifdef DEBUG
-  css_theme->enable_watcher();
-#endif
-
-  app.setStyleSheet(css_theme->readCSS());
+  const QString path_css = "/home/dsc/CLionProjects/godot/texture_browser/src/client/lib/qt/theme/DarkBlue.qss";
+  QFile theme_file(path_css);
+  theme_file.open(QFile::ReadOnly);
+  if (theme_file.isOpen()) {
+    auto body = QString(theme_file.readAll());
+    body = colors::injectStyleSheetColors(body);
+    app.setStyleSheet(body);
+  }
 
   auto *ctx = new Ctx();
 

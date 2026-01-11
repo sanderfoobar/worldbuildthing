@@ -20,6 +20,18 @@
 #include "client/lib/globals.h"
 #include "shared/lib/config.h"
 
+class GodotIconsQRCImageProvider final : public QQuickImageProvider {
+public:
+  explicit GodotIconsQRCImageProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+  QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override;
+};
+
+class BlenderIconsQRCImageProvider final : public QQuickImageProvider {
+public:
+  explicit BlenderIconsQRCImageProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+  QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override;
+};
+
 class TextureQMLProvider final : public QQuickImageProvider {
 public:
   explicit TextureQMLProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
@@ -30,6 +42,7 @@ class Ctx;
 extern Ctx* g_instance;
 
 class Ctx final : public QObject, protected QOpenGLExtraFunctions {
+Q_PROPERTY(g::EditorMode editorMode MEMBER editorMode NOTIFY editorModeChanged)
 Q_OBJECT
 
 public:
@@ -40,6 +53,8 @@ public:
   QSharedPointer<gl::Scene> getCurrentScene() {
     return scene[m_sceneIdx];
   }
+
+  g::EditorMode editorMode = g::EditorMode::OBJECT;
 
   bool is_debug;
   QString preloadModel;
@@ -67,6 +82,10 @@ signals:
   void windowTitle(QString title);
   void GLContextAvailable();
   void texturesUpdated();
+  void editorModeChanged(g::EditorMode mode);
+
+public slots:
+  void switchMode(g::EditorMode mode);
 
 private slots:
   void onApplicationLog(const QString &msg);

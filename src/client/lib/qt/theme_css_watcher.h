@@ -1,8 +1,11 @@
+#pragma once
 #include <QApplication>
 #include <QDebug>
 #include <QFileSystemWatcher>
 
-class CSSTheme : public QObject {
+#include "client/lib/globals_colors.h"
+
+class CSSTheme final : public QObject {
   Q_OBJECT
 
 public:
@@ -17,12 +20,13 @@ public:
     qDebug() << "css theme watching file:" << m_path_css;
   }
 
-  QString readCSS() {
+  QString readCSS() const {
     QFile theme_file(m_path_css);
     theme_file.open(QFile::ReadOnly);
 
     if (theme_file.isOpen()) {
       auto body = QString(theme_file.readAll());
+      //body = QString::fromStdString(colors::export_colors()) + body;
 
       // CSS variables
       QMap<QString, QString> css_vars;
@@ -43,6 +47,7 @@ public:
       }
 
       theme_file.close();
+      qDebug() << "css theme read:" << body;
       return body;
     }
 

@@ -1,5 +1,8 @@
 #pragma once
 #include <ranges>
+#include <string>
+#include <sstream>
+#include <map>
 
 #include <QObject>
 #include <QDebug>
@@ -14,7 +17,19 @@
 #include "shared/lib/bitflags.h"
 
 class TextureQMLProvider;
+class BlenderIconsQRCImageProvider;
+class GodotIconsQRCImageProvider;
+
 namespace g {
+  Q_NAMESPACE
+
+  enum class EditorMode {
+    OBJECT = 0,
+    EDIT,
+    MATERIAL
+  };
+  Q_ENUM_NS(EditorMode)
+
   enum class RenderMode : int {
     PBR              = 1 << 0,
     POINTS           = 1 << 1,
@@ -25,6 +40,7 @@ namespace g {
     DEBUG_AABB       = 1 << 6,
     DEBUG_CAMERA_FRUSTUM_PROJECTION = 1 << 7
   };
+  Q_ENUM_NS(RenderMode)
 
   extern QOpenGLContext *glcontext;
   extern gl::GLTextureManager* glTextureManager;
@@ -40,6 +56,8 @@ namespace g {
   extern GLuint texDefaultNormal;
 
   extern TextureQMLProvider *textureThumbnailQmlProvider;
+  extern BlenderIconsQRCImageProvider *iconsBlenderQmlProvider;
+  extern GodotIconsQRCImageProvider *iconsGodotQmlProvider;
 
   struct RenderModeName {
     RenderMode mode;

@@ -4,39 +4,90 @@ import QtQuick.Layouts
 import QuickFBO 1.0
 
 import Main 1.0
+import GlobalEnums 1.0
 
 Rectangle {
     id: root
     anchors.fill: parent
-
     color: "#232a4e"
 
-    property string bgColor: root.color
-    property bool fullscreenMode: true
+    readonly property int fullscreen: 0
+    readonly property int quad: 1
+    readonly property int split21: 2
+
+    property int layoutMode: root.quad
+    property int previousLayoutMode: root.quad
     property int splitterWidth: 10
 
+    property int viewportMenuHeight: 40
+
     focus: true
-    Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_F) {
-            fullscreenMode = !fullscreenMode
-            event.accepted = true
+
+    Pane {
+        anchors.fill: parent
+        focusPolicy: Qt.ClickFocus
+    }
+
+    function switchMode(mode) {
+        previousLayoutMode = mode;
+        if(mode == Editor.OBJECT)
+            root.layoutMode = root.quad
+        else if (mode == Editor.MATERIAL)
+            root.layoutMode = root.fullscreen
+    }
+
+    Connections {
+        target: ctx
+        function onEditorModeChanged(mode) { root.switchMode(mode); }
+    }
+
+    onWidthChanged: {
+        // scale material overlay proportionally
+        if(rect.width_pct > 10)
+            rect.leftMargin = root.width / (100 / rect.width_pct);
+    }
+
+    onHeightChanged: {
+        // scale material overlay proportionally
+        if(rect.height_pct > 10)
+            rect.bottomMargin = root.height / (100 / rect.height_pct);
+    }
+
+    Keys.onPressed: function(e) {
+        var targetMode = -1
+        if (e.key === Qt.Key_F) targetMode = root.fullscreen
+        if (e.key === Qt.Key_2) targetMode = root.quad
+        if (e.key === Qt.Key_3) targetMode = root.split21
+
+        if (targetMode >= 0) {
+            if (root.layoutMode === targetMode) {
+                // toggle back to previous
+                var temp = root.layoutMode
+                root.layoutMode = root.previousLayoutMode
+                root.previousLayoutMode = temp
+            } else {
+                // store current as previous and switch
+                root.previousLayoutMode = root.layoutMode
+                root.layoutMode = targetMode
+            }
+            e.accepted = true
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: "red"
-
+    ViewportMaterialOverlay {
+        id: rect
+        z: 1337
+        clip: true
+        visible: ctx.editorMode == Editor.MATERIAL
 
     }
 
     Rectangle {
-        id: test
-        visible: false
+        id: grid
+        focus: true
         anchors.fill: parent
         color: "transparent"
 
-        // Ratios instead of absolute pixels
         property real vRatio: 0.5
         property real hRatio: 0.5
 
@@ -45,38 +96,24 @@ Rectangle {
 
         // Top-left
         Rectangle {
-            id: mainView
             x: 0
             y: 0
-            width: fullscreenMode ? root.width : test.vSplit
-            height: fullscreenMode ? root.height : test.hSplit
+            width: root.layoutMode === root.fullscreen ? grid.width :
+                    root.layoutMode === root.split21 ? grid.vSplit : grid.vSplit
+            height: root.layoutMode === root.fullscreen ? grid.height :
+                    root.layoutMode === root.split21 ? grid.hSplit : grid.hSplit
+            color: "transparent"
 
             Item {
                 id: view3d
                 anchors.fill: parent
-                anchors.rightMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
-                anchors.bottomMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
+                anchors.rightMargin: !root.layoutMode === root.fullscreen ? root.splitterWidth / 2 : 0
+                anchors.bottomMargin: !root.layoutMode === root.fullscreen ? root.splitterWidth / 2 : 0
 
                 QuickFBO {
                     id: fbo
                     anchors.fill: parent
                     mirrorVertically: true
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.AllButtons
-
-                    onPressed: (mouseEvent) => {
-                        if (mouseEvent.button === Qt.RightButton)
-                            console.log("Right button pressed at", mouseEvent.x, mouseEvent.y)
-                    }
-
-                    onReleased: (mouseEvent) => {
-                        if (mouseEvent.button === Qt.RightButton)
-                            console.log("Right button released at", mouseEvent.x, mouseEvent.y)
-                    }
                 }
 
                 Rectangle {
@@ -90,19 +127,24 @@ Rectangle {
                         anchors.leftMargin: 8
                         spacing: 10
 
-                        // full item
-                        Rectangle {
-                            color: "white"
-                            Layout.preferredHeight: 28
-                            Layout.preferredWidth: 64
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-
                         Item {
-                            Layout.preferredWidth: 40
+                            Layout.preferredWidth: 8
                             Layout.fillHeight: true
                         }
 
+                        // full item
+                        Rectangle {
+                            color: "white"
+                            Layout.preferredHeight: 16
+                            Layout.preferredWidth: 16
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 16
+                        }
+
+                        Item {
+                            Layout.preferredWidth: 4
+                            Layout.fillHeight: true
+                        }
 
                         ViewportMenuBarTextButton {
                             text: "View"
@@ -135,140 +177,61 @@ Rectangle {
                     }
                 }
             }
-
-            // ColumnLayout {
-            //     id: view3d
-            //     anchors.fill: parent
-            //     anchors.rightMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
-            //     anchors.bottomMargin: !fullscreenMode ? root.splitterWidth / 2 : 0
-            //     spacing: 0
-            //
-            //     Rectangle {
-            //         color: "green"
-            //         Layout.preferredHeight: 38
-            //         Layout.fillWidth: true
-            //     }
-            //
-            //     QuickFBO {
-            //         Layout.fillWidth: true
-            //         Layout.fillHeight: true
-            //         mirrorVertically: true
-            //     }
-            // }
-
-            ShaderEffect {
-                id: view3dshader
-                anchors.fill: view3d
-                layer.enabled: true
-                property var src: view3d
-                property int radius: 8
-                property real deviation: 4
-                property var pixelStep: Qt.vector2d(1/view3d.width, 1/view3d.height)
-
-                property color bgColorQML: root.color
-                property var bgColor: Qt.rgba(bgColorQML.r, bgColorQML.g, bgColorQML.b, bgColorQML.a)
-
-                property bool borderActive: false
-                property color borderColorQML: "#22a0ff"
-                property var borderColor: Qt.rgba(borderColorQML.r, borderColorQML.g, borderColorQML.b, borderColorQML.a)
-
-                property int resolutionx: view3d.width
-                property int resolutiony: view3d.height
-                property real blurStrength: 0.0
-
-                state: "normal"
-                states: [
-                    State {
-                        name: "blurred"
-                        PropertyChanges { target: view3dshader; blurStrength: 1.0 }
-                    },
-                    State {
-                        name: "normal"
-                        PropertyChanges { target: view3dshader; blurStrength: 0.0 }
-                    }
-                ]
-
-                Behavior on blurStrength {
-                    NumberAnimation { duration: 400; easing.type: Easing.InOutQuad }
-                }
-
-                fragmentShader: "qrc:/qml/viewport_main.frag.qsb"
-                visible: true
-
-                onStateChanged: {
-                    console.log("state:", state);
-                }
-
-                // MouseArea {
-                //     anchors.fill: parent
-                //     hoverEnabled: true
-                //     onEntered: parent.borderActive = true
-                //     onExited: parent.borderActive = false
-                //
-                //     propagateComposedEvents: true
-                //
-                //     onClicked: (mouseEvent) => {
-                //         console.log("Mouse in parent:", mouseEvent.x, mouseEvent.y)
-                //     }
-                // }
-
-                // Rectangle {
-                //     z: 349
-                //     height: 38
-                //     width: parent.width
-                //     color: "red"
-                // }
-            }
-
-            Text {
-                text: "Perspective\n\nObjects: 4\nVertices: 8\nEdges: 16\nFaces: 6\nTriangles: 18"
-                color: "white"
-                font.pointSize: 14
-                anchors.top: parent.top
-                anchors.topMargin: 50
-                anchors.left: parent.left
-                anchors.margins: 12
-            }
         }
 
         // Top-right
         Rectangle {
-            visible: !fullscreenMode
-            x: test.vSplit
+            visible: root.layoutMode === root.quad
+            x: grid.vSplit
             y: 0
-            width: test.width - test.vSplit
-            height: test.hSplit
-            color: "green"
+            width: grid.width - grid.vSplit
+            height: grid.hSplit
+            color: "red"
         }
 
         // Bottom-left
         Rectangle {
-            visible: !fullscreenMode
+            visible: root.layoutMode !== root.fullscreen
             x: 0
-            y: test.hSplit
-            width: test.vSplit
-            height: test.height - test.hSplit
+            y: root.layoutMode === root.split21 ? grid.hSplit : grid.hSplit
+            width: root.layoutMode === root.split21 ? grid.vSplit : grid.vSplit
+            height: root.layoutMode === root.split21 ? grid.height - grid.hSplit : grid.height - grid.hSplit
             color: "blue"
         }
 
         // Bottom-right
         Rectangle {
-            visible: !fullscreenMode
-            x: test.vSplit
-            y: test.hSplit
-            width: test.width - test.vSplit
-            height: test.height - test.hSplit
+            visible: root.layoutMode === root.quad
+            x: grid.vSplit
+            y: grid.hSplit
+            width: grid.width - grid.vSplit
+            height: grid.height - grid.hSplit
             color: "yellow"
+        }
+
+        // Right column (Split21)
+        Rectangle {
+            id: split21
+            visible: root.layoutMode === root.split21
+            x: grid.vSplit
+            y: 0
+            width: grid.width - grid.vSplit
+            height: grid.height
+            color: "green"
+
+            MaterialBrowser {
+                anchors.fill: parent
+            }
         }
 
         // Vertical splitter
         Rectangle {
-            visible: !fullscreenMode
-            x: test.vSplit - 5
+            visible: root.layoutMode !== root.fullscreen
+            x: grid.vSplit - root.splitterWidth / 2
             y: 0
             width: root.splitterWidth
-            height: test.height
-            color: root.bgColor
+            height: root.layoutMode === root.split21 ? grid.height : grid.height
+            color: root.color
 
             MouseArea {
                 anchors.fill: parent
@@ -277,20 +240,20 @@ Rectangle {
                 drag.target: parent
                 drag.axis: Drag.XAxis
                 onPositionChanged: {
-                    var x = Math.max(50, Math.min(test.width - 50, parent.x + 5))
-                    test.vRatio = x / test.width
+                    var x = Math.max(50, Math.min(grid.width - 50, parent.x + root.splitterWidth / 2))
+                    grid.vRatio = x / grid.width
                 }
             }
         }
 
         // Horizontal splitter
         Rectangle {
-            visible: !fullscreenMode
+            visible: root.layoutMode !== root.fullscreen && root.layoutMode !== root.split21
             x: 0
-            y: test.hSplit - 5
-            width: test.width
+            y: grid.hSplit - root.splitterWidth / 2
+            width: grid.width
             height: root.splitterWidth
-            color: root.bgColor
+            color: root.color
 
             MouseArea {
                 anchors.fill: parent
@@ -299,19 +262,19 @@ Rectangle {
                 drag.target: parent
                 drag.axis: Drag.YAxis
                 onPositionChanged: {
-                    var y = Math.max(50, Math.min(test.height - 50, parent.y + 5))
-                    test.hRatio = y / test.height
+                    var y = Math.max(50, Math.min(grid.height - 50, parent.y + root.splitterWidth / 2))
+                    grid.hRatio = y / grid.height
                 }
             }
         }
 
-        // Center drag handle
+        // Center XY handle (only for Quad)
         Item {
-            visible: !fullscreenMode
+            visible: root.layoutMode === root.quad
             width: 20
             height: 20
-            x: test.vSplit - width / 2
-            y: test.hSplit - height / 2
+            x: grid.vSplit - width / 2
+            y: grid.hSplit - height / 2
 
             MouseArea {
                 anchors.fill: parent
@@ -319,23 +282,12 @@ Rectangle {
                 drag.target: parent
                 drag.axis: Drag.XAndYAxis
                 onPositionChanged: {
-                    var x = Math.max(50, Math.min(test.width - 50, parent.x + width / 2))
-                    var y = Math.max(50, Math.min(test.height - 50, parent.y + height / 2))
-                    test.vRatio = x / test.width
-                    test.hRatio = y / test.height
+                    var x = Math.max(50, Math.min(grid.width - 50, parent.x + width / 2))
+                    var y = Math.max(50, Math.min(grid.height - 50, parent.y + height / 2))
+                    grid.vRatio = x / grid.width
+                    grid.hRatio = y / grid.height
                 }
             }
         }
     }
-
-    // MouseArea {
-    //     anchors.fill: parent
-    //     onClicked: {
-    //         if(view3dshader.state === "normal") {
-    //             view3dshader.state = "blurred";
-    //         } else {
-    //             view3dshader.state = "normal";
-    //         }
-    //     }
-    // }
 }

@@ -15,6 +15,8 @@ namespace g {
   GLuint texDefaultNormal = 0;
 
   TextureQMLProvider *textureThumbnailQmlProvider = nullptr;
+  BlenderIconsQRCImageProvider *iconsBlenderQmlProvider = nullptr;
+  GodotIconsQRCImageProvider *iconsGodotQmlProvider = nullptr;
 
   // std::function<bool(const QFileInfo&, const QFileInfo&, const QFileInfo&, const QString&, const QString&)> FUNC_GENERATE_VMT_VTF_FILES = nullptr;
   // std::function<bool(void*)> FUNC_GENERATE_VMT_VTF_FILES = nullptr;

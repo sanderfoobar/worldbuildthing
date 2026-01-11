@@ -1,37 +1,6 @@
-/*
-color_active=rgb(35, 114, 155);
-color_highlight=rgb(77,146,182);
-color_border=rgb(52,96,119);
-color_grey=rgb(110,110,110);
-color_bg=rgb(1,1,1);
-*/
-
-QSplitter {
-    /* General splitter look */
-    background-color: $color_bg;
+* {
+    font-size: 26px;
 }
-
-QSplitter::handle {
-    background-color: $color_bg;
-    border-left: 1px solid $color_border;
-}
-
-QSplitter::handle:hover {
-    background-color: $color_bg;
-    border-left: 1px solid $color_highlight;
-}
-
-QSplitter::handle:pressed {
-    background-color: $color_bg;
-    border-left: 1px solid $color_highlight;
-}
-
-/* Example for a dark theme */
-/*
-QSplitter { background-color: #2e2e2e; }
-QSplitter::handle { background-color: #4a4a4a; border: 1px solid #5a5a5a; }
-QSplitter::handle:hover { background-color: #6a6a6a; }
-*/
 
 /* default color for widgets */
 QWidget
@@ -45,7 +14,6 @@ QWidget:disabled
 {
     color: rgb(196,196,196);
 }
-
 
 /*Text Input Widgets*/
 QLineEdit, QTextEdit, QPlainTextEdit
@@ -83,13 +51,11 @@ QLineEdit:disabled, QPlainTextEdit:disabled, QTextEdit:disabled
 
 
 /* Buttons */
-
 QPushButton
 {
     color: rgb(219,222,240);
     padding: 4px;
     background-color: rgb(47,58,117);
-    font-size: 16px;
 }
 
 QPushButton:default
@@ -1271,3 +1237,30 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed
     icon-size: 10px;
     background-color: $color_highlight
 }
+
+QSplitter {
+    /* General splitter look */
+    background-color: $color_bg;
+}
+
+QSplitter::handle {
+    background-color: $color_bg;
+    border-left: 1px solid $color_border;
+}
+
+QSplitter::handle:hover {
+    background-color: $color_bg;
+    border-left: 1px solid $color_highlight;
+}
+
+QSplitter::handle:pressed {
+    background-color: $color_bg;
+    border-left: 1px solid $color_highlight;
+}
+
+/* Example for a dark theme */
+/*
+QSplitter { background-color: #2e2e2e; }
+QSplitter::handle { background-color: #4a4a4a; border: 1px solid #5a5a5a; }
+QSplitter::handle:hover { background-color: #6a6a6a; }
+*/
